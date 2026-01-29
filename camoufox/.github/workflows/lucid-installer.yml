@@ -51,7 +51,7 @@ jobs:
       - name: Install Packaging Dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y clang llvm wget curl --no-install-recommends
+          sudo apt-get install -y clang llvm wget curl rsync --no-install-recommends
 
       - name: Compile XDP (network/xdp_outbound.c)
         run: |

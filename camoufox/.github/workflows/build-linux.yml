@@ -43,6 +43,9 @@ jobs:
       - name: Run pytest (if tests/ exists)
         run: |
           if [ -d tests ]; then
+            if [ -f tests/local-requirements.txt ]; then
+              pip install -r tests/local-requirements.txt
+            fi
             pip install pytest
             pytest -q
           else
