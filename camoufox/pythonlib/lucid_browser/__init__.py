@@ -1,12 +1,12 @@
 from .addons import DefaultAddons
-from .async_api import AsyncLucid Empire, AsyncNewBrowser
-from .sync_api import Lucid Empire, NewBrowser
+from .async_api import AsyncLucidEmpire, AsyncNewBrowser
+from .sync_api import LucidEmpire, NewBrowser
 from .utils import launch_options
 
 __all__ = [
-    "Lucid Empire",
+    "LucidEmpire",
     "NewBrowser",
-    "AsyncLucid Empire",
+    "AsyncLucidEmpire",
     "AsyncNewBrowser",
     "DefaultAddons",
     "launch_options",

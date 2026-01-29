@@ -1,3 +1,0 @@
-# Placeholder for compiled eBPF object file
-# This must be compiled on the target Linux kernel with:
-# clang -O2 -target bpf -c xdp_outbound.c -o xdp_outbound.o
