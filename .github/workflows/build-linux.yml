@@ -27,12 +27,14 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f gui_requirements.txt ]; then pip install -r gui_requirements.txt; fi
 
-      - name: "Optional: build eBPF artifact"
+      - name: Install build dependencies (eBPF & kernel)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang llvm gcc libc6-dev make linux-headers-generic linux-libc-dev libelf-dev
+
+      - name: Build eBPF artifact (if needed)
         run: |
           if [ -f network/xdp_outbound.c ]; then
-            sudo apt-get update
-            sudo apt-get install -y clang llvm linux-headers-$(uname -r) || \
-              sudo apt-get install -y linux-libc-dev
             clang -O2 -target bpf -c network/xdp_outbound.c -o network/xdp_outbound.o
           fi
 
