@@ -1,4 +1,4 @@
-name: build-linux
+﻿name: build-linux
 
 on:
   push:
@@ -76,4 +76,3 @@ jobs:
             start_lucid.sh
             LUCID_V5_MANUAL.md
             dist/lucid_empire_linux_bundle.tgz
-
