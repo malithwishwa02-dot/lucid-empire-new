@@ -1,48 +1,96 @@
-name: Linux Builder
+name: build-linux
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, master ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
+      - uses: actions/checkout@v4
 
       - name: Install system packages
-        run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config libssl-dev
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y build-essential pkg-config libssl-dev zip rsync || true
 
-      - name: Install Python dependencies
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies (core + GUI)
         run: |
           python -m pip install --upgrade pip
-          if [ -f "pyproject.toml" ]; then pip install . || true; fi
-          if [ -f "requirements.txt" ]; then pip install -r requirements.txt || true; fi
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f gui_requirements.txt ]; then pip install -r gui_requirements.txt; fi
 
-      - name: Build with Make (if available)
+      - name: Optional: build eBPF artifact
         run: |
-          if [ -f Makefile ]; then make -j$(nproc); fi
+          if [ -f network/xdp_outbound.c ]; then
+            sudo apt-get update && sudo apt-get install -y clang llvm
+            clang -O2 -target bpf -c network/xdp_outbound.c -o network/xdp_outbound.o
+          fi
 
-      - name: Run tests (pytest if available)
+      - name: Optional: place Firefox binary
         run: |
-          if command -v pytest >/dev/null 2>&1; then pytest -q || true; fi
+          mkdir -p bin/firefox
+          # Copy or download your hardened Firefox build to bin/firefox/firefox
+          echo "[INFO] Provide hardened Firefox at bin/firefox/firefox before release."
 
-      - name: Upload build artifacts
+      - name: Run smoke tests
+        run: |
+          for p in lucid_launcher.py core modules network pythonlib lucid_commander.py; do
+            if [ -e "$p" ]; then
+              python -m compileall "$p" || echo "[WARN] compileall failed for $p";
+            else
+              echo "[INFO] $p not found; skipping compile"
+            fi
+          done
+
+      - name: Run pytest (if tests/ exists)
+        run: |
+          if [ -d tests ]; then
+            pip install pytest
+            pytest -q
+          else
+            echo "[INFO] No tests/ directory; skipping pytest."
+          fi
+
+      - name: Package release bundle
+        run: |
+          mkdir -p dist tmp_release
+          items=(lucid_commander.py lucid_launcher.py start_lucid.sh LUCID_V5_MANUAL.md gui_requirements.txt bin)
+          for it in "${items[@]}"; do
+            if [ -e "$it" ]; then
+              cp -a "$it" tmp_release/ || true
+            else
+              echo "[INFO] $it not present; skipping"
+            fi
+          done
+          # create tar only from collected files (ignore missing files)
+          if [ -d tmp_release ] && [ "$(ls -A tmp_release)" ]; then
+            tar -C tmp_release -czf dist/lucid_empire_linux_bundle.tgz .
+          else
+            echo "[WARN] No files collected for bundle; creating empty tar"
+            tar -C . -czf dist/lucid_empire_linux_bundle.tgz --files-from /dev/null
+          fi
+          rm -rf tmp_release
+
+      - name: Archive artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: build-artifacts
+          name: linux-build-artifacts
           path: |
-            ./dist
-            ./build
-            ./artifacts
-            ./target
-            ./out
+            network/xdp_outbound.o
+            bin/firefox/
+            lucid_commander.py
+            lucid_launcher.py
+            start_lucid.sh
+            LUCID_V5_MANUAL.md
+            dist/lucid_empire_linux_bundle.tgz
           if-no-files-found: ignore
