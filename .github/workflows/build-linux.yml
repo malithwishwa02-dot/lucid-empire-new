@@ -30,7 +30,9 @@ jobs:
       - name: "Optional: build eBPF artifact"
         run: |
           if [ -f network/xdp_outbound.c ]; then
-            sudo apt-get update && sudo apt-get install -y clang llvm
+            sudo apt-get update
+            sudo apt-get install -y clang llvm linux-headers-$(uname -r) || \
+              sudo apt-get install -y linux-libc-dev
             clang -O2 -target bpf -c network/xdp_outbound.c -o network/xdp_outbound.o
           fi
 
