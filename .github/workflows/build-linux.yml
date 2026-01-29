@@ -1,84 +1,171 @@
-name: build-linux
+"""
+Easy build CLI for Lucid Empire
 
-on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
+options:
+  -h, --help            show this help message and exit
+  --target {linux,windows,macos} [{linux,windows,macos} ...]
+                        Target platforms to build
+  --arch {x86_64,arm64,i686} [{x86_64,arm64,i686} ...]
+                        Target architectures to build for each platform
+  --bootstrap           Bootstrap the build system
+  --clean               Clean the build directory before starting
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+Example:
+$ python3 multibuild.py --target linux windows macos --arch x86_64 arm64
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
+Since Lucid Empire is NOT meant to be used as a daily driver, no installers are provided.
+"""
 
-      - name: Install dependencies (core + GUI)
-        run: |
-          python -m pip install --upgrade pip
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          if [ -f camoufox/requirements.txt ]; then pip install -r camoufox/requirements.txt; fi
-          if [ -f gui_requirements.txt ]; then pip install -r gui_requirements.txt; fi
-          if [ -f camoufox/gui_requirements.txt ]; then pip install -r camoufox/gui_requirements.txt; fi
+import argparse
+import glob
+import os
+from pathlib import Path
+import sys
+from dataclasses import dataclass
+from typing import List
+import shutil
 
-      - name: Optional: build eBPF artifact
-        run: |
-          if [ -f camoufox/network/xdp_outbound.c ]; then
-            sudo apt-get update && sudo apt-get install -y clang llvm libbpf-dev linux-headers-$(uname -r) build-essential libelf-dev
-            clang -O2 -g -target bpf -c camoufox/network/xdp_outbound.c -o camoufox/network/xdp_outbound.o
-          fi
+# Constants
+AVAILABLE_TARGETS = ["linux", "windows", "macos"]
+AVAILABLE_ARCHS = ["x86_64", "arm64", "i686"]
 
-      - name: Optional: place Firefox binary
-        run: |
-          mkdir -p camoufox/bin/firefox
-          # Copy or download your hardened Firefox build to camoufox/bin/firefox/firefox
-          echo "[INFO] Provide hardened Firefox at camoufox/bin/firefox/firefox before release."
 
-      - name: Run health check
-        run: |
-          bash camoufox/tools/health_check.sh
+def setup_linux_sysroots():
+    """
+    Set up symlinks required for Linux cross-compilation.
+    The sysroots may be missing the libsqlite3.so symlink needed for linking.
+    """
+    mozbuild = Path.home() / '.mozbuild'
+    sysroots = [
+        ('sysroot-aarch64-linux-gnu', 'aarch64-linux-gnu'),
+        ('sysroot-x86_64-linux-gnu', 'x86_64-linux-gnu'),
+        ('sysroot-i686-linux-gnu', 'i686-linux-gnu'),
+    ]
 
-      - name: Run smoke tests
-        run: |
-          cd camoufox && python -m compileall lucid_launcher.py core modules network pythonlib lucid_commander.py
+    for sysroot_name, lib_arch in sysroots:
+        sysroot_lib = mozbuild / sysroot_name / 'usr' / 'lib' / lib_arch
+        sqlite_so = sysroot_lib / 'libsqlite3.so'
+        sqlite_so_0 = sysroot_lib / 'libsqlite3.so.0'
 
-      - name: Run pytest (if tests/ exists)
-        run: |
-          if [ -d tests ]; then
-            pip install pytest
-            pytest -q
-          elif [ -d camoufox/tests ]; then
-            pip install pytest
-            cd camoufox && pytest -q
-          else
-            echo "[INFO] No tests/ directory; skipping pytest."
-          fi
+        if sysroot_lib.exists() and sqlite_so_0.exists() and not sqlite_so.exists():
+            print(f"Creating libsqlite3.so symlink in {sysroot_lib}")
+            sqlite_so.symlink_to('libsqlite3.so.0')
 
-      - name: Package release bundle
-        run: |
-          mkdir -p dist
-          tar czf dist/lucid_empire_linux_bundle.tgz \
-            camoufox/lucid_commander.py \
-            camoufox/lucid_launcher.py \
-            camoufox/start_lucid.sh \
-            camoufox/LUCID_V5_MANUAL.md \
-            camoufox/gui_requirements.txt \
-            camoufox/bin
 
-      - name: Archive artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-build-artifacts
-          path: |
-            camoufox/network/xdp_outbound.o
-            camoufox/bin/firefox/
-            camoufox/lucid_commander.py
-            camoufox/lucid_launcher.py
-            camoufox/start_lucid.sh
-            camoufox/LUCID_V5_MANUAL.md
-            dist/lucid_empire_linux_bundle.tgz
+def run(cmd, exit_on_fail=True):
+    print(f'\n------------\n{cmd}\n------------\n')
+    retval = os.system(cmd)
+    if retval != 0 and exit_on_fail:
+        print(f"fatal error: command '{cmd}' failed")
+        sys.exit(1)
+    return retval
+
+
+@dataclass
+class BSYS:
+    target: str
+    arch: str
+
+    @staticmethod
+    def bootstrap():
+        """Bootstrap the build system"""
+        run('make bootstrap')
+
+    @staticmethod
+    def generate_assets_car():
+        """Generate Assets.car for macOS builds"""
+        run('make generate-assets-car')
+
+    def build(self):
+        """Build the Lucid Empire source code"""
+        os.environ['BUILD_TARGET'] = f'{self.target},{self.arch}'
+        run('make build')
+
+    def package(self):
+        """Package the Lucid Empire source code"""
+        run(f'make package-{self.target} arch={self.arch}')
+
+    def update_target(self):
+        """Change the build target"""
+        os.environ['BUILD_TARGET'] = f'{self.target},{self.arch}'
+        run('make set-target')
+
+    @property
+    def assets(self) -> List[str]:
+        """Get the list of assets"""
+        package_pattern = f'lucid_browser-*-{self.target[:3]}.{self.arch}.zip'
+        return glob.glob(package_pattern)
+
+    @staticmethod
+    def clean():
+        """Clean the Lucid Empire directory"""
+        run('make clean')
+
+
+def run_build(target, arch):
+    """
+    Run the build for the given target and architecture
+    """
+    builder = BSYS(target, arch)
+    builder.update_target()
+    # Run build
+    builder.build()
+    # Run package
+    builder.package()
+    # Move assets to dist
+    print('Assets:', ', '.join(builder.assets))
+    for asset in builder.assets:
+        shutil.move(asset, f'dist/{asset}')
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Easy build CLI for Lucid Empire")
+    parser.add_argument(
+        "--target",
+        choices=AVAILABLE_TARGETS,
+        nargs='+',
+        required=True,
+        help="Target platform for the build",
+    )
+    parser.add_argument(
+        "--arch",
+        choices=AVAILABLE_ARCHS,
+        nargs='+',
+        required=True,
+        help="Target architecture for the build",
+    )
+    parser.add_argument("--bootstrap", action="store_true", help="Bootstrap the build system")
+    parser.add_argument(
+        "--clean", action="store_true", help="Clean the build directory before starting"
+    )
+
+    args = parser.parse_args()
+
+    # Run bootstrap if requested
+    if args.bootstrap:
+        BSYS.bootstrap()
+    # Clean if requested
+    if args.clean:
+        BSYS.clean()
+    # Generate Assets.car if building for macOS
+    if 'macos' in args.target:
+        BSYS.generate_assets_car()
+
+    # Ensure dist directory exists
+    os.makedirs('dist', exist_ok=True)
+
+    # Set up Linux sysroot symlinks if needed
+    if 'linux' in args.target:
+        setup_linux_sysroots()
+
+    # Run build
+    for target in args.target:
+        for arch in args.arch:
+            if (target, arch) in [("windows", "arm64"), ("macos", "i686")]:
+                print(f"Skipping {target} {arch}: Unsupported architecture.")
+                continue
+            run_build(target, arch)
+
+
+if __name__ == "__main__":
+    main()
