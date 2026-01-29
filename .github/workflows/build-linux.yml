@@ -36,6 +36,10 @@ jobs:
           # Copy or download your hardened Firefox build to bin/firefox/firefox
           echo "[INFO] Provide hardened Firefox at bin/firefox/firefox before release."
 
+      - name: Run health check
+        run: |
+          bash camoufox/tools/health_check.sh
+
       - name: Run smoke tests
         run: |
           python -m compileall lucid_launcher.py core modules network pythonlib lucid_commander.py
