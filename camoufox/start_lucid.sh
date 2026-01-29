@@ -20,12 +20,19 @@ if [ -z "$PROFILE_ID" ]; then
 fi
 
 NO_EBPF_MARKER=".no_ebpf"
+IS_WSL=0
+if grep -qi "microsoft" /proc/version 2>/dev/null; then IS_WSL=1; fi
 
 have_tty() { test -t 1; }
 
 maybe_escalate() {
   if [ -f "$NO_EBPF_MARKER" ]; then
     echo "[*] Lite Mode active (.no_ebpf present). Skipping sudo/eBPF."
+    return 0
+  fi
+  if [ "$IS_WSL" -eq 1 ]; then
+    echo "[*] WSL detected; eBPF unsupported. Touching .no_ebpf and continuing in Lite Mode."
+    touch "$NO_EBPF_MARKER"
     return 0
   fi
   if [ "$EUID" -eq 0 ]; then
