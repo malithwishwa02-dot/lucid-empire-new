@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  vtpm_emulator:
+    image: tpmdev/tpm2-runtime
+    container_name: vtpm_sidecar
+    command: >
+      swtpm socket
+      --tpmstate dir=/data/profiles/active_ghost/tpm_state
+      --ctrl type=unixio,path=/tmp/swtpm/swtpm-sock
+      --tpm2
+      --log level=20
+    volumes:
+      - ./lucid_profile_data:/data/profiles
+    tmpfs:
+      - /tmp/swtpm
+
+  genesis_engine:
+    build: .
+    container_name: lucid_genesis
+    volumes:
+      - ./lucid_profile_data:/app/lucid_profile_data
+      - /tmp/swtpm:/tmp/swtpm
+    environment:
+      - LUCID_MODE=GENESIS
+      - TPM2TOOLS_TCTI=swtpm:path=/tmp/swtpm/swtpm-sock
+    depends_on:
+      - vtpm_emulator
+    cap_add:
+      - SYS_ADMIN
+      - NET_ADMIN # Required for XDP/eBPF network masking

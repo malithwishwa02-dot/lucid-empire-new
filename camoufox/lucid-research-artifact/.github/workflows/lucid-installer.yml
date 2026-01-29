@@ -1,0 +1,114 @@
+name: Lucid Empire Release Builder
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  # JOB 1: COMPILE THE BROWSER (WINDOWS TARGET)
+  build-browser:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install MozillaBuild
+        run: choco install mozillabuild
+        
+      - name: Bootstrap Build
+        run: ./mach bootstrap --application-choice browser --no-interactive
+        
+      - name: Inject Silence
+        run: |
+          echo "ac_add_options --disable-telemetry" >> .mozconfig
+          echo "ac_add_options --disable-crashreporter" >> .mozconfig
+          echo "ac_add_options --target=x86_64-pc-windows-msvc" >> .mozconfig
+           
+      - name: Compile Warhead
+        run: |
+         ./mach build
+         ./mach package
+          
+      - name: Upload Binary Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: lucid-browser-bin
+          path: obj-x86_64-pc-windows-msvc/dist/install/sea/*.zip
+
+  # JOB 2: PACKAGE THE LINUX INSTALLER
+  package-installer:
+    needs: build-browser
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Download Browser Binary
+        uses: actions/download-artifact@v3
+        with:
+          name: lucid-browser-bin
+          path: build_assets/
+
+      - name: Install Packaging Dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y clang llvm wget curl --no-install-recommends
+
+      - name: Compile XDP (network/xdp_outbound.c)
+        run: |
+          if [ -f "network/xdp_outbound.c" ]; then
+            clang -O2 -target bpf -c "network/xdp_outbound.c" -o "network/xdp_outbound.o"
+            echo "[SUCCESS] Compiled network/xdp_outbound.o"
+          else
+            echo "[WARN] network/xdp_outbound.c not found, skipping XDP compilation"
+          fi
+
+      - name: Run Font Harmonization Script
+        run: |
+          if [ -f "scripts/setup_fonts.sh" ]; then
+            sudo bash scripts/setup_fonts.sh
+          else
+            echo "[WARN] scripts/setup_fonts.sh not found, skipping font harmonization"
+          fi
+
+      - name: Download Firefox Linux (official)
+        run: |
+          mkdir -p build_assets/firefox
+          wget -q -O build_assets/firefox/firefox.tar.bz2 "https://download.mozilla.org/?product=firefox-latest&os=linux64&lang=en-US"
+          tar -xjf build_assets/firefox/firefox.tar.bz2 -C build_assets/firefox
+          chmod +x build_assets/firefox/firefox || true
+
+      # Correcting the packaging step to handle root-level source files and include artifacts
+      - name: Create Distribution Package
+        run: |
+          set -e
+          mkdir -p "release/lucid empire"
+          
+          # Copy everything from root to release/lucid empire, excluding the release dir itself and .git
+          rsync -av --exclude='release' --exclude='.git' . "release/lucid empire/"
+
+          # Ensure bin/firefox exists and place a Linux firefox binary if available
+          mkdir -p "release/lucid empire/bin/firefox"
+          if [ -f "build_assets/firefox/firefox" ]; then
+            cp build_assets/firefox/firefox "release/lucid empire/bin/firefox/firefox"
+            chmod +x "release/lucid empire/bin/firefox/firefox"
+          else
+            echo "[WARN] No linux firefox binary found in build_assets/firefox/"
+          fi
+
+          # Ensure network XDP object is included
+          if [ -f "network/xdp_outbound.o" ]; then
+            cp network/xdp_outbound.o "release/lucid empire/network/xdp_outbound.o"
+          fi
+
+          # Move the installer script to the root of the release folder (outside the empire folder)
+          mv "release/lucid empire/install_lucid.sh" release/ || true
+          
+          # Zip it all
+          cd release
+          zip -r lucid-empire-installer-v5.zip .
+          
+      - name: Upload Installer
+        uses: actions/upload-artifact@v3
+        with:
+          name: Lucid-Empire-Installer-Linux
+          path: release/lucid-empire-installer-v5.zip

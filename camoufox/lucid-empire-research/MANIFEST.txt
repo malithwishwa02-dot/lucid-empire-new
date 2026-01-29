@@ -1,0 +1,41 @@
+Lucid Empire - Research Copy Manifest
+
+Location: lucid-empire-research/
+Archive: lucid-empire-research.zip
+
+Included folders:
+- core/
+- modules/
+- network/
+- scripts/
+- patches/
+- docs/
+- settings/
+- additions/
+- pythonlib/
+- lucid_profile_data/
+- assets/
+- .github/
+
+Included top-level files:
+- README.md
+- LICENSE
+- install_lucid.sh
+- lucid_launcher.py
+- lucid_manager.py
+- pack_lucid.py
+- start_lucid.sh
+- Makefile
+- docker-compose.yml
+
+Excluded (intentionally to reduce size):
+- bundle/ (binaries & large assets)
+- bin/ (browser binaries)
+- lucid_browser/ (full browser build)
+- tests/ (test data)
+- __pycache__/
+- *.o, *.zip, *.png, *.pdf
+
+Notes:
+- Archive size (zip): ~0.092 MB (see lucid-empire-research.zip in repository root)
+- This copy preserves source, scripts, patches, and configs for analysis only. It is not a runnable browser build.

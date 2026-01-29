@@ -1,9 +1,8 @@
 # Local builds
-/camoufox-*
+/lucid_browser-*
 /firefox-*
 /mozilla-unified
 dist/
-bin/
 launch
 launch.exe
 
