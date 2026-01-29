@@ -12,11 +12,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install system packages
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y build-essential pkg-config libssl-dev zip rsync || true
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -43,13 +38,7 @@ jobs:
 
       - name: Run smoke tests
         run: |
-          for p in lucid_launcher.py core modules network pythonlib lucid_commander.py; do
-            if [ -e "$p" ]; then
-              python -m compileall "$p" || echo "[WARN] compileall failed for $p";
-            else
-              echo "[INFO] $p not found; skipping compile"
-            fi
-          done
+          python -m compileall lucid_launcher.py core modules network pythonlib lucid_commander.py
 
       - name: Run pytest (if tests/ exists)
         run: |
@@ -62,23 +51,14 @@ jobs:
 
       - name: Package release bundle
         run: |
-          mkdir -p dist tmp_release
-          items=(lucid_commander.py lucid_launcher.py start_lucid.sh LUCID_V5_MANUAL.md gui_requirements.txt bin)
-          for it in "${items[@]}"; do
-            if [ -e "$it" ]; then
-              cp -a "$it" tmp_release/ || true
-            else
-              echo "[INFO] $it not present; skipping"
-            fi
-          done
-          # create tar only from collected files (ignore missing files)
-          if [ -d tmp_release ] && [ "$(ls -A tmp_release)" ]; then
-            tar -C tmp_release -czf dist/lucid_empire_linux_bundle.tgz .
-          else
-            echo "[WARN] No files collected for bundle; creating empty tar"
-            tar -C . -czf dist/lucid_empire_linux_bundle.tgz --files-from /dev/null
-          fi
-          rm -rf tmp_release
+          mkdir -p dist
+          tar czf dist/lucid_empire_linux_bundle.tgz \
+            lucid_commander.py \
+            lucid_launcher.py \
+            start_lucid.sh \
+            LUCID_V5_MANUAL.md \
+            gui_requirements.txt \
+            bin
 
       - name: Archive artifacts
         if: always()
@@ -93,4 +73,3 @@ jobs:
             start_lucid.sh
             LUCID_V5_MANUAL.md
             dist/lucid_empire_linux_bundle.tgz
-          if-no-files-found: ignore
