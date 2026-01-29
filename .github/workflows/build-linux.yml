@@ -20,7 +20,7 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           if [ -f gui_requirements.txt ]; then pip install -r gui_requirements.txt; fi
-      - name: Optional: build eBPF artifact
+      - name: "Optional: build eBPF artifact"
         run: |
           if [ -f network/xdp_outbound.c ]; then
             sudo apt-get update && sudo apt-get install -y clang llvm
