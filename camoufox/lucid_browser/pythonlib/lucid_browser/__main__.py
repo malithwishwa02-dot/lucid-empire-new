@@ -13,7 +13,7 @@ import click
 
 from .addons import DefaultAddons, maybe_download_addons
 from .locale import ALLOW_GEOIP, download_mmdb, remove_mmdb
-from .pkgman import INSTALL_DIR, Lucid EmpireFetcher, installed_verstr, rprint
+from .pkgman import INSTALL_DIR, LucidEmpireFetcher, installed_verstr, rprint
 
 try:
     from browserforge.download import download as update_browserforge
@@ -22,7 +22,7 @@ except ImportError:
     from browserforge.download import Download as update_browserforge
 
 
-class Lucid EmpireUpdate(Lucid EmpireFetcher):
+class LucidEmpireUpdate(LucidEmpireFetcher):
     """
     Checks & updates Lucid Empire
     """
@@ -83,7 +83,7 @@ def fetch(browserforge=False) -> None:
     """
     Fetch the latest version of Lucid Empire and optionally update Browserforge's database
     """
-    Lucid EmpireUpdate().update()
+    LucidEmpireUpdate().update()
     # Fetch the GeoIP database
     if ALLOW_GEOIP:
         download_mmdb()
@@ -100,7 +100,7 @@ def remove() -> None:
     """
     Remove all downloaded files
     """
-    if not Lucid EmpireUpdate().cleanup():
+    if not LucidEmpireUpdate().cleanup():
         rprint("Lucid Empire binaries not found!", fg="red")
     # Remove the GeoIP database
     remove_mmdb()
@@ -112,9 +112,9 @@ def test(url: Optional[str] = None) -> None:
     """
     Open the Playwright inspector
     """
-    from .sync_api import Lucid Empire
+    from .sync_api import LucidEmpire
 
-    with Lucid Empire(headless=False, env=environ, config={'showcursor': False}) as browser:
+    with LucidEmpire(headless=False, env=environ, config={'showcursor': False}) as browser:
         page = browser.new_page()
         if url:
             page.goto(url)
@@ -150,7 +150,7 @@ def version() -> None:
     except PackageNotFoundError:
         rprint("Pip package:\tNot installed!", fg="red")
 
-    updater = Lucid EmpireUpdate()
+    updater = LucidEmpireUpdate()
     bin_ver = updater.current_verstr
 
     # If binaries are not downloaded

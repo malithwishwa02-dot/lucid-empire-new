@@ -13,7 +13,7 @@ from lucid_browser.virtdisplay import VirtualDisplay
 from .utils import launch_options, sync_attach_vd
 
 
-class Lucid Empire(PlaywrightContextManager):
+class LucidEmpire(PlaywrightContextManager):
     """
     Wrapper around playwright.sync_api.PlaywrightContextManager that automatically
     launches a browser and closes it when the context manager is exited.

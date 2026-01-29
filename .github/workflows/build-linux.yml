@@ -21,20 +21,22 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f camoufox/requirements.txt ]; then pip install -r camoufox/requirements.txt; fi
           if [ -f gui_requirements.txt ]; then pip install -r gui_requirements.txt; fi
+          if [ -f camoufox/gui_requirements.txt ]; then pip install -r camoufox/gui_requirements.txt; fi
 
       - name: Optional: build eBPF artifact
         run: |
-          if [ -f network/xdp_outbound.c ]; then
-            sudo apt-get update && sudo apt-get install -y clang llvm
-            clang -O2 -target bpf -c network/xdp_outbound.c -o network/xdp_outbound.o
+          if [ -f camoufox/network/xdp_outbound.c ]; then
+            sudo apt-get update && sudo apt-get install -y clang llvm libbpf-dev linux-headers-$(uname -r) build-essential libelf-dev
+            clang -O2 -g -target bpf -c camoufox/network/xdp_outbound.c -o camoufox/network/xdp_outbound.o
           fi
 
       - name: Optional: place Firefox binary
         run: |
-          mkdir -p bin/firefox
-          # Copy or download your hardened Firefox build to bin/firefox/firefox
-          echo "[INFO] Provide hardened Firefox at bin/firefox/firefox before release."
+          mkdir -p camoufox/bin/firefox
+          # Copy or download your hardened Firefox build to camoufox/bin/firefox/firefox
+          echo "[INFO] Provide hardened Firefox at camoufox/bin/firefox/firefox before release."
 
       - name: Run health check
         run: |
@@ -42,13 +44,16 @@ jobs:
 
       - name: Run smoke tests
         run: |
-          python -m compileall lucid_launcher.py core modules network pythonlib lucid_commander.py
+          cd camoufox && python -m compileall lucid_launcher.py core modules network pythonlib lucid_commander.py
 
       - name: Run pytest (if tests/ exists)
         run: |
           if [ -d tests ]; then
             pip install pytest
             pytest -q
+          elif [ -d camoufox/tests ]; then
+            pip install pytest
+            cd camoufox && pytest -q
           else
             echo "[INFO] No tests/ directory; skipping pytest."
           fi
@@ -57,12 +62,12 @@ jobs:
         run: |
           mkdir -p dist
           tar czf dist/lucid_empire_linux_bundle.tgz \
-            lucid_commander.py \
-            lucid_launcher.py \
-            start_lucid.sh \
-            LUCID_V5_MANUAL.md \
-            gui_requirements.txt \
-            bin
+            camoufox/lucid_commander.py \
+            camoufox/lucid_launcher.py \
+            camoufox/start_lucid.sh \
+            camoufox/LUCID_V5_MANUAL.md \
+            camoufox/gui_requirements.txt \
+            camoufox/bin
 
       - name: Archive artifacts
         if: always()
@@ -70,10 +75,10 @@ jobs:
         with:
           name: linux-build-artifacts
           path: |
-            network/xdp_outbound.o
-            bin/firefox/
-            lucid_commander.py
-            lucid_launcher.py
-            start_lucid.sh
-            LUCID_V5_MANUAL.md
+            camoufox/network/xdp_outbound.o
+            camoufox/bin/firefox/
+            camoufox/lucid_commander.py
+            camoufox/lucid_launcher.py
+            camoufox/start_lucid.sh
+            camoufox/LUCID_V5_MANUAL.md
             dist/lucid_empire_linux_bundle.tgz
