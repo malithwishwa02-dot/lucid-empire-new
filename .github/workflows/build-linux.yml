@@ -48,13 +48,27 @@ jobs:
       - name: Package release bundle
         run: |
           mkdir -p dist
-          tar czf dist/lucid_empire_linux_bundle.tgz \
-            lucid_commander.py \
-            lucid_launcher.py \
-            start_lucid.sh \
-            LUCID_V5_MANUAL.md \
-            gui_requirements.txt \
+          files=(
+            lucid_commander.py
+            lucid_launcher.py
+            start_lucid.sh
+            LUCID_V5_MANUAL.md
+            gui_requirements.txt
             bin
+          )
+          include=()
+          for f in "${files[@]}"; do
+            if [ -e "$f" ]; then
+              include+=("$f")
+            else
+              echo "[WARN] Missing $f, skipping"
+            fi
+          done
+          if [ ${#include[@]} -eq 0 ]; then
+            echo "[ERROR] No files found to package." >&2
+            exit 1
+          fi
+          tar czf dist/lucid_empire_linux_bundle.tgz "${include[@]}"
       - name: Archive artifacts
         if: always()
         uses: actions/upload-artifact@v4
