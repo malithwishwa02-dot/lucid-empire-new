@@ -4,6 +4,8 @@ import os
 import subprocess
 import json
 import threading
+import sys
+import platform
 from core.profile_store import ProfileStore
 
 THEME = {"bg": "#121212", "fg": "#e0e0e0", "accent": "#00e676", "panel": "#1e1e1e"}
@@ -99,7 +101,9 @@ class LucidManager:
 
         def save():
             data = {
-                "name": e_name.get(), "proxy": e_proxy.get(), "template": tmpl_combo.get(),
+                "name": e_name.get(),
+                "proxy": e_proxy.get(),
+                "template": tmpl_combo.get(),
                 "fullz": {"address": e_addr.get(), "email": e_email.get(), "phone": e_phone.get()},
                 "financial": {"pan": e_cc_pan.get(), "exp": e_cc_exp.get(), "cvv": e_cc_cvv.get()},
                 "mission": {"target_site": e_target.get(), "aging_days": int(e_aging.get() or 66)}
@@ -123,8 +127,24 @@ class LucidManager:
         sel = self.tree.selection()
         if not sel: return
         pid = self.tree.item(sel[0])['values'][4]
-        # Launches the orchestrator in takeover mode
-        subprocess.Popen(f"python3 lucid_launcher.py --mode takeover --profile_id {pid}", shell=True)
+
+        # Choose platform-appropriate launcher to handle venv and eBPF/sudo logic
+        is_windows = platform.system().lower().startswith("win")
+        if is_windows:
+            launcher = "start_lucid.bat"
+            cmd = [launcher, pid]
+        else:
+            launcher = "./start_lucid.sh"
+            cmd = [launcher, pid]
+
+        if not os.path.exists(launcher):
+            messagebox.showerror("Launcher Missing", f"{launcher} not found. Ensure you run from repository root.")
+            return
+
+        try:
+            subprocess.Popen(cmd)
+        except Exception as exc:
+            messagebox.showerror("Launch Failed", f"Failed to start launcher: {exc}")
 
 if __name__ == "__main__":
     root = tk.Tk()

@@ -1,13 +1,16 @@
 #!/bin/bash
-# LUCID EMPIRE :: LAUNCH PROTOCOL v5.0
-# AUTHORITY: Dva.12
-# FUNCTION: Privilege Escalation & Python Handoff
+# LUCID EMPIRE :: LAUNCH PROTOCOL v5.0 (HARDENED)
+# FUNCTION: Platform-aware handoff with eBPF Lite Mode guard
 
-PROFILE_ID=$1
+set -euo pipefail
+
+PROFILE_ID=${1:-}
+ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$ROOT_DIR"
 
 echo "=================================================="
 echo "   LUCID EMPIRE :: LAUNCH SEQUENCE INITIATED"
-echo "   TARGET PROFILE: $PROFILE_ID"
+echo "   TARGET PROFILE: ${PROFILE_ID:-<none>}"
 echo "=================================================="
 
 if [ -z "$PROFILE_ID" ]; then
@@ -16,16 +19,40 @@ if [ -z "$PROFILE_ID" ]; then
     exit 1
 fi
 
-if [ "$EUID" -ne 0 ]; then
-    echo "[!] AUTHORITY: User is not ROOT."
-    echo "[*] ESCALATION: Requesting sudo privileges for Kernel Injection..."
-    exec sudo "$0" "$PROFILE_ID"
-    exit
+NO_EBPF_MARKER=".no_ebpf"
+
+have_tty() { test -t 1; }
+
+maybe_escalate() {
+  if [ -f "$NO_EBPF_MARKER" ]; then
+    echo "[*] Lite Mode active (.no_ebpf present). Skipping sudo/eBPF."
+    return 0
+  fi
+  if [ "$EUID" -eq 0 ]; then
+    echo "[*] STATUS: ROOT ACCESS GRANTED."
+    return 0
+  fi
+  if ! have_tty; then
+    echo "[!] No TTY for sudo prompt. Either run from terminal or touch .no_ebpf to skip escalation." >&2
+    exit 1
+  fi
+  echo "[*] ESCALATION: Requesting sudo for eBPF load..."
+  exec sudo "$0" "$PROFILE_ID"
+}
+
+maybe_escalate
+
+if [ ! -f "$NO_EBPF_MARKER" ]; then
+  echo "[*] NET: Loading XDP Packet Mask (Windows 10 Signature) ..."
+  # Loader is expected inside Python; sudo context ensures capability
+else
+  echo "[*] NET: Lite Mode (no eBPF). Proceeding without kernel hooks."
 fi
 
-echo "[*] STATUS: ROOT ACCESS GRANTED."
-echo "[*] CORE: Initializing Docker Interface..."
-echo "[*] NET:  Loading XDP Packet Mask (Windows 10 Signature)..."
+if [ -f "venv/bin/activate" ]; then
+  # shellcheck disable=SC1091
+  source venv/bin/activate
+fi
 
 if [ -f "lucid_launcher.py" ]; then
     python3 lucid_launcher.py --launch "$PROFILE_ID" --mode manual

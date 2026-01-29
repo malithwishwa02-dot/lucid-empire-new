@@ -7,6 +7,7 @@ import logging
 import platform
 import time
 from pathlib import Path
+import glob
 from core.profile_store import ProfileStore
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - [LUCID] - %(message)s')
@@ -82,6 +83,33 @@ def run_genesis(profile):
         os.remove(temp_cfg)
 
 
+def resolve_firefox_bin():
+    env_path = os.environ.get("LUCID_FIREFOX_BIN")
+    if env_path:
+        p = Path(env_path)
+        if p.exists():
+            logging.info(f"Using LUCID_FIREFOX_BIN={p}")
+            return p
+
+    default_linux = Path("./bin/firefox/firefox")
+    if default_linux.exists():
+        return default_linux
+
+    # Look for obj-*/dist/bin/firefox from local builds
+    for candidate in glob.glob("obj-*/dist/bin/firefox"):
+        p = Path(candidate)
+        if p.exists():
+            logging.info(f"Using discovered build artifact: {p}")
+            return p
+
+    if IS_WINDOWS:
+        default_win = Path("./bin/firefox/firefox.exe")
+        if default_win.exists():
+            return default_win
+
+    return None
+
+
 def run_takeover(profile):
     logging.info("INITIATING TAKEOVER...")
     inject_proxy(profile['path'], profile.get('proxy'))
@@ -101,15 +129,10 @@ def run_takeover(profile):
     env["LUCID_WEBGL_RENDERER"] = hw['webgl']['unmasked_renderer']
     env["LUCID_PLATFORM"] = hw['navigator']['platform']
 
-    firefox_bin = DEFAULT_FIREFOX_BIN
-    if IS_WINDOWS and not firefox_bin.exists():
-        win_fallback = Path("./bin/firefox/firefox.exe")
-        if win_fallback.exists():
-            firefox_bin = win_fallback
-
-    if not firefox_bin.exists():
-        logging.error("BINARY MISSING: Set LUCID_FIREFOX_BIN or place binary in ./bin/firefox/")
-        sys.exit(1)
+    firefox_bin = resolve_firefox_bin()
+    if not firefox_bin:
+        logging.error("BINARY MISSING: Set LUCID_FIREFOX_BIN or place binary in ./bin/firefox/ (or obj-*/dist/bin/firefox)")
+        sys.exit(127)
 
     cmd = [str(firefox_bin), "--profile", profile['path'], "--no-remote", "--new-instance"]
     # Skip Linux-only hooks (eBPF/Docker) on Windows; they are not invoked here by default

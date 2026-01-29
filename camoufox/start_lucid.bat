@@ -25,6 +25,10 @@ IF %ERRORLEVEL% NEQ 0 (
 
 echo [*] ELEVATION: GRANTED (ADMIN).
 
+IF EXIST "venv\Scripts\activate" (
+    CALL venv\Scripts\activate
+)
+
 IF EXIST "lucid_launcher.py" (
     echo [*] CORE: Handoff to Lucid Engine...
     python lucid_launcher.py --launch "%PROFILE_ID%" --mode manual
