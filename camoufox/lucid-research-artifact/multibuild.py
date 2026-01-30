@@ -115,7 +115,13 @@ def run_build(target, arch):
     # Move assets to dist
     print('Assets:', ', '.join(builder.assets))
     for asset in builder.assets:
-        shutil.move(asset, f'dist/{asset}')
+        # Place the artifact directly into dist/ using the base filename to avoid
+        # creating nested directories or failing when assets include paths
+        dest = os.path.join('dist', os.path.basename(asset))
+        try:
+            shutil.move(asset, dest)
+        except Exception as e:
+            print(f"Warning: failed to move {asset} -> {dest}: {e}")
 
 
 def main():
