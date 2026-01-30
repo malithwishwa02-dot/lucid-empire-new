@@ -70,13 +70,14 @@ def main():
         env["LUCID_WEBGL_RENDERER"] = hw['webgl']['unmasked_renderer']
         env["LUCID_PLATFORM"] = hw['navigator']['platform']
         
-        # Path to binary - Checks local bin first
-        firefox_bin = "./bin/firefox/firefox" 
-        if not os.path.exists(firefox_bin):
-             logging.error("BINARY MISSING: Please place 'firefox' in ./bin/firefox/")
-             sys.exit(1)
+        # Path to binary - centralized resolution
+        from core.bin_finder import find_sovereign_binary
+        firefox_bin = find_sovereign_binary()
+        if not firefox_bin:
+            logging.error("BINARY MISSING: Set LUCID_FIREFOX_BIN or place binary in ./bin/firefox/ (or ./firefox/firefox)")
+            sys.exit(1)
 
-        cmd = [firefox_bin, "--profile", profile['path'], "--no-remote", "--new-instance"]
+        cmd = [str(firefox_bin), "--profile", profile['path'], "--no-remote", "--new-instance"]
         subprocess.run(cmd, env=env)
 
 if __name__ == "__main__":

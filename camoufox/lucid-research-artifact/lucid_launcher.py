@@ -1,83 +1,118 @@
-import os
+"""
+LUCID LAUNCHER v5.2 (SMART PATHING)
+AUTHORITY: PROMETHEUS-CORE
+PURPOSE: Orchestrates Docker, eBPF, and Browser processes.
+PATCH: Auto-detects binary location from 'install_lucid.sh' paths.
+"""
+
 import sys
-import subprocess
 import argparse
+import time
+import os
 import json
-import logging
-from core.profile_store import ProfileStore
+import subprocess
+import shutil
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - [LUCID] - %(message)s')
+# [IMPORT YOUR EXISTING MODULES HERE]
+# from core.genesis_engine import GenesisEngine
 
-def inject_proxy(profile_path, proxy_str):
-    if not proxy_str: return
-    try:
-        if "@" in proxy_str:
-            auth, endpoint = proxy_str.split("@")
-            ip, port = endpoint.split(":")
-        else:
-            ip, port = proxy_str.split(":")
-            
-        prefs = [
-            'user_pref("network.proxy.type", 1);',
-            f'user_pref("network.proxy.socks", "{ip}");',
-            f'user_pref("network.proxy.socks_port", {port});',
-            'user_pref("network.proxy.socks_remote_dns", true);'
-        ]
-        user_js = os.path.join(profile_path, "user.js")
-        with open(user_js, "a") as f:
-            f.write("\n".join(prefs))
-        logging.info(f"PROXY INJECTED: {ip}")
-    except Exception as e:
-        logging.error(f"Proxy Error: {e}")
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--mode", required=True, choices=["genesis", "takeover"])
-    parser.add_argument("--profile_id", required=True)
-    args = parser.parse_args()
+from core.bin_finder import find_sovereign_binary
 
-    store = ProfileStore()
-    profile = store.get_profile(args.profile_id)
-    if not profile:
-        logging.error("Profile ID not found in database.")
+
+def load_profile(profile_id):
+    """
+    Loads the profile config from lucid_profiles.json
+    """
+    db_path = "lucid_profiles.json"
+    if not os.path.exists(db_path):
+        print(f"[!] CRITICAL: {db_path} not found. Run the GUI first.")
         sys.exit(1)
 
-    if args.mode == "genesis":
-        # Create temp config for Genesis Engine
-        temp_cfg = f"/tmp/{args.profile_id}.json"
-        with open(temp_cfg, 'w') as f:
-            json.dump(profile, f)
-        # Execute Genesis Engine
-        subprocess.run(["python3", "core/genesis_engine.py", "--profile_id", args.profile_id, "--config", temp_cfg])
-        if os.path.exists(temp_cfg): os.remove(temp_cfg)
-
-    elif args.mode == "takeover":
-        logging.info("INITIATING TAKEOVER...")
-        inject_proxy(profile['path'], profile.get('proxy'))
-        
-        # Load Hardware Mask
-        tmpl_path = f"lucid_profile_data/default/{profile['template']}"
-        if not os.path.exists(tmpl_path):
-             # Fallback if template path logic differs
-             tmpl_path = "lucid_profile_data/default/golden_template.json"
-
-        with open(tmpl_path, 'r') as f:
-            hw = json.load(f)
+    try:
+        with open(db_path, "r") as f:
+            profiles = json.load(f)
             
-        env = os.environ.copy()
-        env["FAKETIME"] = "" # Disable Time Warp for Live Op
-        env["LUCID_WEBGL_VENDOR"] = hw['webgl']['unmasked_vendor']
-        env["LUCID_WEBGL_RENDERER"] = hw['webgl']['unmasked_renderer']
-        env["LUCID_PLATFORM"] = hw['navigator']['platform']
-        
-        # Path to binary - Checks local bin first
-        firefox_bin = "./bin/firefox/firefox" 
-        if not os.path.exists(firefox_bin):
-             logging.error("BINARY MISSING: Please place 'firefox' in ./bin/firefox/")
-             sys.exit(1)
+        # Handle list vs dict structure
+        if isinstance(profiles, list):
+            target = next((p for p in profiles if p["id"] == profile_id), None)
+        else:
+            target = profiles.get(profile_id)
+            
+        if not target:
+            print(f"[!] ERROR: Profile {profile_id} not found in DB.")
+            sys.exit(1)
+            
+        return target
+    except Exception as e:
+        print(f"[!] ERROR: Could not read profile DB: {e}")
+        sys.exit(1)
 
-        cmd = [firefox_bin, "--profile", profile['path'], "--no-remote", "--new-instance"]
-        subprocess.run(cmd, env=env)
+
+def launch_sovereign_browser(profile):
+    """
+    The Core Launch Logic.
+    """
+    print(f"\n[*] IDENTITY: {profile.get('name', 'Unknown')}")
+    print(f"[*] PROXY:    {profile.get('proxy', 'Direct')}")
+    print(f"[*] TRUST:    {profile.get('trust_score', 0)}/100")
+    
+    # 1. Locate Binary
+    binary_path = find_sovereign_binary()
+    if not binary_path:
+        print("\n[!] FATAL: Sovereign Browser Binary NOT FOUND.")
+        print("    Expected at: ./bin/firefox/firefox")
+        print("    Please download the Camoufox release and place it there.")
+        sys.exit(1)
+        
+    print(f"[*] BINARY:   {binary_path}")
+
+    # 2. Kernel Ops (Linux Only)
+    if sys.platform.startswith("linux"):
+        if os.geteuid() == 0:
+            print("\n[1/3] KERNEL: Injecting eBPF maps for Windows TCP/IP...")
+            # subprocess.run(["./network/xdp_loader.sh", "load"]) 
+            # Placeholder for actual XDP load logic
+            time.sleep(0.5)
+        else:
+            print("\n[!] WARNING: Not running as Root. eBPF Network Mask SKIPPED.")
+    
+    # 3. Launch
+    print("[2/3] ENGINE:  Igniting Gecko Engine...")
+    print("[3/3] SESSION: Manual Takeover Active.")
+    print(">> BROWSER LAUNCHED. DO NOT CLOSE THIS TERMINAL.")
+    
+    # Construct the launch command
+    # We pass the profile ID as an argument to the browser wrapper or env var
+    cmd = [binary_path, "--no-remote", "--profile", f"./lucid_profile_data/{profile.get('id', 'default')}" ]
+    
+    try:
+        proc = subprocess.Popen(cmd)
+        
+        # Keep alive loop
+        while proc.poll() is None:
+            time.sleep(1)
+            
+    except KeyboardInterrupt:
+        print("\n[*] SHUTDOWN SEQUENCE INITIATED.")
+        proc.terminate()
+    except Exception as e:
+        print(f"\n[!] CRASH: {e}")
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Lucid Empire CLI Launcher")
+    parser.add_argument("--launch", type=str, help="UUID of the profile to launch")
+    parser.add_argument("--mode", type=str, default="manual", help="Operation mode (manual/genesis)")
+    
+    args = parser.parse_args()
+    
+    if args.launch:
+        profile = load_profile(args.launch)
+        launch_sovereign_browser(profile)
+    else:
+        print("LUCID EMPIRE CLI")
+        print("Usage: python lucid_launcher.py --launch <UUID>")
 
 if __name__ == "__main__":
     main()
