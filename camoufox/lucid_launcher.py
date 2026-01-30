@@ -12,6 +12,14 @@ from core.profile_store import ProfileStore
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - [LUCID] - %(message)s')
 
+# Detect Debian-installed package layout and prefer packaged firefox + bundled pylibs
+if os.path.exists("/opt/lucid-empire/browser/firefox"):
+    # Add bundled site-packages so packaged dependencies are used
+    pylibs = "/opt/lucid-empire/pylibs"
+    if pylibs not in sys.path:
+        sys.path.insert(0, pylibs)
+    os.environ.setdefault("LUCID_FIREFOX_BIN", "/opt/lucid-empire/browser/firefox")
+
 IS_WINDOWS = platform.system().lower().startswith("win")
 DEFAULT_FIREFOX_BIN = Path(os.environ.get("LUCID_FIREFOX_BIN", "./bin/firefox/firefox"))
 

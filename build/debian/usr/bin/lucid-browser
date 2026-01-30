@@ -1,0 +1,4 @@
+#!/bin/bash
+export PYTHONPATH="/opt/lucid-empire/pylibs:${PYTHONPATH:-}"
+cd /opt/lucid-empire
+python3 lucid_launcher.py "$@"
