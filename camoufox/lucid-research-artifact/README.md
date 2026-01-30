@@ -86,3 +86,28 @@ The project uses a Hybrid Build Pipeline.
 *   **Maintain** the `lucid_profile_data` directory structure.
 
 **AUTHORITY**: PROMETHEUS-CORE | **STATUS**: OBLIVION_ACTIVE
+
+---
+
+## One-Click Installer & CI (NEW)
+This artifact has been updated to include an automated, idempotent **one-click installer** and a container blueprint that enables demonstration and testing of the Lucid Empire runtime on Linux hosts and in Docker.
+
+- Installer: `install_lucid.sh` — installs system deps, injects Microsoft fonts, configures Xvfb, creates a Python virtualenv, installs `camoufox[geoip]` and `browserforge`, fetches the patched binary, writes a `main.py` launch script and runs a self-test against CreepJS.
+- Container: `Dockerfile` — non-root user, installs fonts and deps, creates venv and fetches the patched binary for runtime testing.
+- Self-test: `main.py` — performs an automated CreepJS fingerprint check and saves `lucid_verification.png` for verification.
+- CI Workflow: `.github/workflows/ci-build-and-selftest.yml` — builds the Docker image and runs the self-test, uploading the screenshot as an artifact.
+
+Usage (Host):
+```bash
+sudo bash install_lucid.sh
+source lucid_env/bin/activate
+python3 main.py
+```
+
+Usage (Docker):
+```bash
+docker build -t lucid-research-artifact .
+docker run --shm-size=2gb --ipc=host lucid-research-artifact
+```
+
+> Note: These changes are also included in branch `feat/one-click-installer` (PR #3).

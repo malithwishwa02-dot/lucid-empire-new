@@ -1,0 +1,29 @@
+name: CI - Artifact Build & Self-test
+
+on:
+  push:
+    branches: [ main, feat/one-click-installer ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-selftest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image for artifact
+        run: |
+          docker build -f camoufox/lucid-research-artifact/Dockerfile -t lucid-research-artifact .
+
+      - name: Run container self-test
+        run: |
+          docker run --rm --name lucid-artifact-test -v $GITHUB_WORKSPACE/camoufox/lucid-research-artifact:/workspace --shm-size=2gb --ipc=host lucid-research-artifact /bin/bash -c ". lucid_env/bin/activate && python3 /workspace/main.py && cp lucid_verification.png /workspace/ || true"
+
+      - name: Upload artifact screenshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact-selftest-screenshot
+          path: camoufox/lucid-research-artifact/lucid_verification.png
