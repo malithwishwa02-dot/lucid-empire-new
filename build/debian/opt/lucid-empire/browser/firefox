@@ -1,3 +1,0 @@
-#!/bin/sh
-echo "Lucid Dummy Firefox"
-exit 0

@@ -1,7 +1,0 @@
-#!/bin/sh
-set -e
-chown -R root:root /opt/lucid-empire
-chmod -R 755 /opt/lucid-empire
-update-desktop-database || true
-gtk-update-icon-cache -f /usr/share/icons/hicolor 2>/dev/null || true
-exit 0

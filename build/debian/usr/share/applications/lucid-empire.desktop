@@ -1,7 +1,0 @@
-[Desktop Entry]
-Name=Lucid Empire
-Comment=Anti-Detect Research Browser
-Exec=/usr/bin/lucid-browser
-Icon=/usr/share/icons/hicolor/128x128/apps/lucid-empire.png
-Type=Application
-Categories=Network;WebBrowser;
