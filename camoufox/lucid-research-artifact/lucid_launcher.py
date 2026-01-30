@@ -8,6 +8,14 @@ from core.profile_store import ProfileStore
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - [LUCID] - %(message)s')
 
+# Detect if running as an installed Debian package and adjust paths/env accordingly
+if os.path.exists("/opt/lucid-empire/browser/firefox"):
+    pylibs_path = "/opt/lucid-empire/pylibs"
+    if pylibs_path not in sys.path:
+        sys.path.insert(0, pylibs_path)
+    os.environ.setdefault("LUCID_FIREFOX_BIN", "/opt/lucid-empire/browser/firefox")
+
+
 def inject_proxy(profile_path, proxy_str):
     if not proxy_str: return
     try:

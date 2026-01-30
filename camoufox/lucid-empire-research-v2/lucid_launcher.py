@@ -8,6 +8,16 @@ from core.profile_store import ProfileStore
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - [LUCID] - %(message)s')
 
+# Detect if running as an installed Debian package and adjust paths/env accordingly
+# - Add bundled Python libs to `sys.path` so the packaged dependencies are used
+# - Set `LUCID_FIREFOX_BIN` for the packaged firefox binary
+if os.path.exists("/opt/lucid-empire/browser/firefox"):
+    pylibs_path = "/opt/lucid-empire/pylibs"
+    if pylibs_path not in sys.path:
+        sys.path.insert(0, pylibs_path)
+    os.environ.setdefault("LUCID_FIREFOX_BIN", "/opt/lucid-empire/browser/firefox")
+
+
 def inject_proxy(profile_path, proxy_str):
     if not proxy_str: return
     try:
@@ -70,11 +80,11 @@ def main():
         env["LUCID_WEBGL_RENDERER"] = hw['webgl']['unmasked_renderer']
         env["LUCID_PLATFORM"] = hw['navigator']['platform']
         
-        # Path to binary - Checks local bin first
-        firefox_bin = "./bin/firefox/firefox" 
+        # Path to binary - Prefer packaged binary via LUCID_FIREFOX_BIN, fallback to local ./bin
+        firefox_bin = os.environ.get("LUCID_FIREFOX_BIN", "./bin/firefox/firefox")
         if not os.path.exists(firefox_bin):
-             logging.error("BINARY MISSING: Please place 'firefox' in ./bin/firefox/")
-             sys.exit(1)
+            logging.error(f"BINARY MISSING: {firefox_bin} not found. Please place 'firefox' in ./bin/firefox/ or install the package.")
+            sys.exit(1)
 
         cmd = [firefox_bin, "--profile", profile['path'], "--no-remote", "--new-instance"]
         subprocess.run(cmd, env=env)

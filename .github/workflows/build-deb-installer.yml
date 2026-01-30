@@ -1,0 +1,113 @@
+name: Build Lucid Empire .deb Installer
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build-and-package:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Install Build Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3 python3-pip make build-essential dpkg-dev
+        # Install standard Firefox build deps to ensure compilation works
+        sudo apt-get install -y libgtk-3-dev libasound2-dev libdbus-glib-1-dev libxt-dev
+
+    - name: Build Lucid Browser Core
+      working-directory: ./camoufox/lucid-empire-research-v2
+      run: |
+        chmod +x install_lucid.sh || true
+        # Adjust this if your Makefile target differs
+        set -euo pipefail
+        if make build; then
+          echo "Build completed"
+        else
+          echo "::warning::'make build' failed. Attempting 'make all'..."
+          make all
+        fi
+        # Verify build artifact exists
+        if [ ! -d dist/firefox ]; then
+          echo "::error::Build artifact missing: dist/firefox not found"
+          exit 1
+        fi
+
+    - name: Prepare Debian Package Structure
+      run: |
+        rm -rf build/debian || true
+        mkdir -p build/debian/DEBIAN
+        mkdir -p build/debian/opt/lucid-empire
+        mkdir -p build/debian/usr/bin
+        mkdir -p build/debian/usr/share/applications
+        mkdir -p build/debian/usr/share/icons
+
+    - name: Integrate Python "Brain" & Modules
+      run: |
+        # Copy the Python controller and AI modules
+        cp -r camoufox/lucid-empire-research-v2/lucid_launcher.py build/debian/opt/lucid-empire/
+        cp -r camoufox/lucid-empire-research-v2/lucid_manager.py build/debian/opt/lucid-empire/ || true
+        cp -r camoufox/lucid-empire-research-v2/core build/debian/opt/lucid-empire/
+        cp -r camoufox/lucid-empire-research-v2/modules build/debian/opt/lucid-empire/
+        cp -r camoufox/lucid-empire-research-v2/jsonvv build/debian/opt/lucid-empire/ || true
+        
+        # Copy the compiled browser binary (adjust source path if 'dist' differs)
+        if [ -d "camoufox/lucid-empire-research-v2/dist/firefox" ]; then
+          cp -r camoufox/lucid-empire-research-v2/dist/firefox build/debian/opt/lucid-empire/browser
+          # Copy browser icon if available into standard icon location
+          ICON_SRC="camoufox/lucid-empire-research-v2/dist/firefox/browser/chrome/icons/default/default128.png"
+          if [ -f "$ICON_SRC" ]; then
+            mkdir -p build/debian/usr/share/icons/hicolor/128x128/apps
+            cp "$ICON_SRC" build/debian/usr/share/icons/hicolor/128x128/apps/lucid-empire.png
+          fi
+        else
+          echo "::warning::compiled firefox not found in dist/. Ensure build produced 'dist/firefox'"
+        fi
+        
+        # Install Python dependencies into a local folder to bundle them (Self-contained)
+        if [ -f camoufox/gui_requirements.txt ]; then
+          pip3 install -r camoufox/gui_requirements.txt --target build/debian/opt/lucid-empire/pylibs
+        fi
+
+    - name: Create System Launcher Script
+      run: |
+        mkdir -p build/debian/usr/bin
+        printf '%s\n' '#!/bin/bash' 'export PYTHONPATH="/opt/lucid-empire/pylibs:${PYTHONPATH:-}"' 'cd /opt/lucid-empire' 'python3 lucid_launcher.py "$@"' > build/debian/usr/bin/lucid-browser
+        chmod +x build/debian/usr/bin/lucid-browser
+
+    - name: Create Debian Control File
+      run: |
+        mkdir -p build/debian/DEBIAN
+        printf '%s\n' 'Package: lucid-empire' 'Version: 2.0.0' 'Section: web' 'Priority: optional' 'Architecture: amd64' 'Depends: python3, libgtk-3-0, libdbus-glib-1-2' 'Maintainer: Dva.12 <admin@lucidempire.ai>' 'Description: Lucid Empire Anti-Detect Browser' ' PROMETHEUS-CORE INTEGRATED.' ' Features biometric mimicry, commerce injection, and zero-refusal navigation.' > build/debian/DEBIAN/control
+
+    - name: Create maintainer scripts (postinst/prerm)
+      run: |
+        printf '%s\n' '#!/bin/sh' 'set -e' 'chown -R root:root /opt/lucid-empire' 'chmod -R 755 /opt/lucid-empire' 'update-desktop-database || true' 'gtk-update-icon-cache -f /usr/share/icons/hicolor 2>/dev/null || true' 'exit 0' > build/debian/DEBIAN/postinst
+        chmod 755 build/debian/DEBIAN/postinst
+        printf '%s\n' '#!/bin/sh' 'set -e' 'update-desktop-database || true' 'gtk-update-icon-cache -f /usr/share/icons/hicolor 2>/dev/null || true' 'exit 0' > build/debian/DEBIAN/prerm
+        chmod 755 build/debian/DEBIAN/prerm
+
+    - name: Create Desktop Entry
+      run: |
+        mkdir -p build/debian/usr/share/applications
+        printf '%s\n' '[Desktop Entry]' 'Name=Lucid Empire' 'Comment=Anti-Detect Research Browser' 'Exec=/usr/bin/lucid-browser' 'Icon=/usr/share/icons/hicolor/128x128/apps/lucid-empire.png' 'Type=Application' 'Categories=Network;WebBrowser;' > build/debian/usr/share/applications/lucid-empire.desktop
+
+    - name: Build .deb Package
+      run: |
+        set -euo pipefail
+        dpkg-deb --build build/debian lucid-empire_2.0.0_amd64.deb
+
+    - name: Upload Installer Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: lucid-empire-installer
+        path: |
+          lucid-empire_2.0.0_amd64.deb
+          build/debian
