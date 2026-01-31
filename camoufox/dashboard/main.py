@@ -1,5 +1,7 @@
 import os
 import sys
+# Dva.12 Patch: Allow visibility of project root for imports
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import subprocess
 import argparse
 import json
@@ -66,9 +68,9 @@ def main():
             
         env = os.environ.copy()
         env["FAKETIME"] = "" # Disable Time Warp for Live Op
-        env["LUCID_WEBGL_VENDOR"] = hw['webgl']['unmasked_vendor']
-        env["LUCID_WEBGL_RENDERER"] = hw['webgl']['unmasked_renderer']
-        env["LUCID_PLATFORM"] = hw['navigator']['platform']
+        env["LUCID_WEBGL_VENDOR"] = hw['webgl']['unmasked_vendor'] if 'unmasked_vendor' in hw.get('webgl', {}) else hw['webgl'].get('vendor')
+        env["LUCID_WEBGL_RENDERER"] = hw['webgl'].get('unmasked_renderer') if 'unmasked_renderer' in hw.get('webgl', {}) else hw['webgl'].get('renderer')
+        env["LUCID_PLATFORM"] = hw['navigator'].get('platform')
         
         # Path to binary - Checks local bin first
         firefox_bin = "./bin/firefox/firefox" 

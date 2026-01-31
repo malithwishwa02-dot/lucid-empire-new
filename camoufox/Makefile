@@ -189,10 +189,6 @@ package-windows:
 		--arch $(arch) \
 		--fonts macos linux
 
-package-deb:
-	# Build a .deb containing the full Lucid Empire bundle
-	./scripts/package_deb.sh $(version)
-
 run-launcher:
 	rm -rf $(cf_source_dir)/obj-x86_64-pc-linux-gnu/dist/bin/launch;
 	make build-launcher arch=x86_64 os=linux;

@@ -6,12 +6,12 @@ import random
 import math
 import time
 import os
+import numpy as np
+from scipy.interpolate import CubicSpline
 try:
     import onnxruntime as ort
-    import numpy as np
 except ImportError:
     ort = None
-    np = None
 
 class BiometricMimicry:
     def __init__(self, page, model_path="assets/models/ghost_motor_v5.onnx"):
@@ -30,7 +30,7 @@ class BiometricMimicry:
         """
         Uses the GAN model to generate a human-like trajectory (Plan 5.1).
         """
-        if not self.session or not np:
+        if not self.session:
             return None
             
         # Prepare input for the model (simplified example)
@@ -84,6 +84,45 @@ class BiometricMimicry:
             await self.page.mouse.move(curr_x + tremor_x, curr_y + tremor_y)
             await asyncio.sleep(random.uniform(0.007, 0.015))
 
+    def generate_bezier_curve(self, start_x, start_y, end_x, end_y):
+        """Generate a Bezier curve with randomized control points"""
+        # Control points placed randomly along the path
+        ctrl_x1 = start_x + (end_x - start_x) * random.uniform(0.2, 0.4)
+        ctrl_y1 = start_y + (end_y - start_y) * random.uniform(0.1, 0.3)
+        ctrl_x2 = start_x + (end_x - start_x) * random.uniform(0.6, 0.8)
+        ctrl_y2 = start_y + (end_y - start_y) * random.uniform(0.7, 0.9)
+        
+        return [
+            start_x, start_y,
+            ctrl_x1, ctrl_y1,
+            ctrl_x2, ctrl_y2,
+            end_x, end_y
+        ]
+        
+    def add_micro_tremors(self, points):
+        """Add micro-tremors to the points"""
+        tremored_points = []
+        for i in range(0, len(points), 2):
+            x = points[i] + random.uniform(-0.5, 0.5)
+            y = points[i+1] + random.uniform(-0.5, 0.5)
+            tremored_points.extend([x, y])
+        return tremored_points
+        
+    async def human_move_gan(self, start_x, start_y, end_x, end_y):
+        """Simulate human-like mouse movement"""
+        # Generate the base Bezier curve
+        bezier_points = self.generate_bezier_curve(start_x, start_y, end_x, end_y)
+        # Add micro-tremors
+        points = self.add_micro_tremors(bezier_points)
+        
+        # Convert points to a path string
+        path_str = "M{},{} C{}, {}, {}, {}, {}, {}".format(*points)
+        
+        # Use Playwright to move the mouse along the path
+        await self.page.mouse.move(points[0], points[1])
+        for i in range(2, len(points), 6):
+            await self.page.mouse.move(points[i], points[i+1])
+        
     async def human_click(self, selector=None, x=None, y=None):
         """
         Simulates a human click with hesitation and variable hold duration.

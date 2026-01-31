@@ -188,7 +188,7 @@ class VirtualDisplayNotSupported(VirtualDisplayError):
     ...
 
 
-class LucidEmpireNotInstalled(FileNotFoundError):
+class Lucid EmpireNotInstalled(FileNotFoundError):
     """
     Raised when lucid_browser is not installed.
     """

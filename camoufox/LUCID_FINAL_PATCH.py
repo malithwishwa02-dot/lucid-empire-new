@@ -198,7 +198,7 @@ class LucidManager:
         if not sel: return
         pid = self.tree.item(sel[0])['values'][4]
         # Using xterm to show the Genesis Engine output in a separate window
-        cmd = f"xterm -e 'python3 lucid_launcher.py --mode genesis --profile_id {pid}; read -p \"Done\"'"
+        cmd = f"xterm -e 'python3 dashboard/main.py --mode genesis --profile_id {pid}; read -p \"Done\"'"
         subprocess.Popen(cmd, shell=True)
         self.store.update_status(pid, 'genesis_complete', True)
         self.root.after(2000, self.refresh_list)
@@ -208,7 +208,7 @@ class LucidManager:
         if not sel: return
         pid = self.tree.item(sel[0])['values'][4]
         # Launches the orchestrator in takeover mode
-        subprocess.Popen(f"python3 lucid_launcher.py --mode takeover --profile_id {pid}", shell=True)
+        subprocess.Popen(f"python3 dashboard/main.py --mode takeover --profile_id {pid}", shell=True)
 
 if __name__ == "__main__":
     root = tk.Tk()

@@ -3,7 +3,7 @@ import subprocess
 import time
 
 from lucid_browser.pkgman import launch_path
-from lucid_browser.sync_api import LucidEmpire
+from lucid_browser.sync_api import Lucid Empire
 from lucid_browser.virtdisplay import VirtualDisplay
 from playwright.sync_api import sync_playwright
 from tabulate import tabulate
@@ -42,7 +42,7 @@ def run_playwright(mode, browser_name):
     env = {"DISPLAY": virt.get()}
 
     if browser_name == "lucid_browser-ubo":
-        lucid_browser = LucidEmpire(headless=headless, env=env)
+        lucid_browser = Lucid Empire(headless=headless, env=env)
         browser = lucid_browser.start()
     elif browser_name == "firefox":
         playwright = sync_playwright().start()

@@ -15,7 +15,7 @@ from lucid_browser.virtdisplay import VirtualDisplay
 from .utils import async_attach_vd, launch_options
 
 
-class AsyncLucidEmpire(PlaywrightContextManager):
+class AsyncLucid Empire(PlaywrightContextManager):
     """
     Wrapper around playwright.async_api.PlaywrightContextManager that automatically
     launches a browser and closes it when the context manager is exited.
