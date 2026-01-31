@@ -1,0 +1,70 @@
+name: LUCID EMPIRE COMMERCIAL BUILD (v5.0)
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build-commercial-artifact:
+    name: Compile & Package (.deb)
+    runs-on: ubuntu-22.04
+
+    steps:
+      # 1. ACQUIRE SOURCE CODE
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 2. PREPARE BUILD ENVIRONMENT (Python)
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      # 3. INSTALL SOVEREIGN DEPENDENCIES
+      - name: Install System Libraries (eBPF & GUI)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang llvm libbpf-dev
+          sudo apt-get install -y libgl1-mesa-glx libegl1-mesa libxkbcommon-x11-0 libdbus-1-3
+          sudo apt-get install -y dpkg-dev
+
+      # 4. INSTALL PYTHON CORE
+      - name: Install Python Requirements
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller nuitka
+          pip install PyQt6 playwright requests qt-material
+
+      # 5. INSTALL PLAYWRIGHT BROWSERS (Required for freezing)
+      - name: Install Playwright Drivers
+        run: |
+          playwright install chromium
+          playwright install-deps
+
+      # 6. EXECUTE COMMERCIAL BUILD PROTOCOL
+      - name: Run Packaging Script
+        run: |
+          chmod +x packaging/build_deb.sh
+          ./packaging/build_deb.sh
+        env:
+          LUCID_BUILD_SECRET: ${{ secrets.LUCID_BUILD_SECRET }}
+
+      # 7. UPLOAD ARTIFACT (THE PRODUCT)
+      - name: Upload Commercial .deb Package
+        uses: actions/upload-artifact@v4
+        with:
+          name: lucid-empire-commercial-linux
+          path: dist/*.deb
+          if-no-files-found: error
+          retention-days: 7
+
+      # 8. (OPTIONAL) AUTOMATIC RELEASE
+      - name: Release to GitHub
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/*.deb

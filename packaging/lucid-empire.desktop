@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Lucid Empire
+Comment=Lucid anti-detect browser
+Exec=/usr/bin/lucid-empire %u
+Icon=lucid-empire
+Terminal=false
+Type=Application
+Categories=Network;WebBrowser;
+StartupWMClass=Lucid Empire

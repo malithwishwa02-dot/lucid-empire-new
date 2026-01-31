@@ -1,0 +1,50 @@
+name: Auto-merge on green
+
+on:
+  workflow_run:
+    workflows: ["build-deb"]
+    types: [completed]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  auto-merge:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Auto-merge eligible PRs
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const head_branch = context.payload.workflow_run.head_branch;
+            // Only auto-merge packaging/* branches to avoid accidental merges
+            if (!head_branch || (!head_branch.startsWith('packaging/') && !head_branch.startsWith('packaging-'))) {
+              core.info(`Skipping auto-merge for branch ${head_branch}`);
+              return;
+            }
+
+            const prsResp = await github.rest.pulls.list({ owner, repo, head: `${owner}:${head_branch}`, state: 'open' });
+            const prs = prsResp.data || [];
+            if (prs.length === 0) {
+              core.info(`No matching open PRs for branch ${head_branch}`);
+              return;
+            }
+
+            for (const pr of prs) {
+              try {
+                if (pr.mergeable === false) {
+                  core.warning(`PR ${pr.number} is not mergeable, skipping`);
+                  continue;
+                }
+                await github.rest.pulls.merge({ owner, repo, pull_number: pr.number, merge_method: 'merge' });
+                await github.rest.issues.createComment({ owner, repo, issue_number: pr.number, body: `Auto-merged by CI after successful \'build-deb\' run: ${context.payload.workflow_run.html_url}` });
+                core.info(`Merged PR #${pr.number}`);
+              } catch (err) {
+                core.warning(`Failed merging PR ${pr.number}: ${err}`);
+              }
+            }

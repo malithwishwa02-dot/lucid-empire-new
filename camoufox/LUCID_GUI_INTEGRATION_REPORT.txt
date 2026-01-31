@@ -17,9 +17,9 @@ Key Findings
    - Document requirement: run GUI from elevated shell when using Linux/WSL with eBPF/Docker, or stub out the eBPF step on platforms that don’t support it.
 
 3) Binary Path Assumption (High)
-   - lucid_launcher.py hardcodes ./bin/firefox/firefox. If the binary is missing, takeover aborts. GUI does not surface this error.
+   - lucid_launcher.py previously hardcoded ./bin/firefox/firefox; this has been centralized to `core/bin_finder.py` which supports `LUCID_FIREFOX_BIN`, `./bin/firefox/firefox`, and `./firefox/firefox`. If the binary is missing, the launcher now logs a clear error; GUI should surface this message to the user.
    Fix:
-   - Add path override (env or CLI flag). Surface missing binary error to GUI.
+   - Surface missing binary error to GUI (capture exit code and show actionable message). Document canonical paths and `LUCID_FIREFOX_BIN`.
 
 4) Profile Schema Alignment (Medium)
    - GUI create_profile writes {name, proxy_host, template, fullz, cc, target, aging}. ProfileStore stores financial under key 'financial'. GUI writes cc→financial only in Mock manager; Production manager is bypassed. On takeover, lucid_launcher expects profile['proxy'], ['template'], ['mission']['aging_days'].

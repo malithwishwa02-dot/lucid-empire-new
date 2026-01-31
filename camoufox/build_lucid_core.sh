@@ -81,7 +81,7 @@ if [ -f "$BIN_PATH" ]; then
     chmod +x "$BIN_PATH"
 else
     echo -e "${RED}[!] WARNING: Sovereign Browser Binary MISSING.${NC}"
-    echo "    Expected at: ./$BIN_PATH"
+    echo "    Expected at: ./$BIN_PATH  (or set LUCID_FIREFOX_BIN to an absolute path)"
     echo "    The system will build the Python Core, but launch will fail without the browser."
 fi
 

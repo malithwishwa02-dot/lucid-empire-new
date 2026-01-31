@@ -1,0 +1,78 @@
+name: build-linux
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies (core + GUI)
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f gui_requirements.txt ]; then pip install -r gui_requirements.txt; fi
+
+      - name: Optional: build eBPF artifact
+        run: |
+          if [ -f network/xdp_outbound.c ]; then
+            sudo apt-get update && sudo apt-get install -y clang llvm
+            clang -O2 -target bpf -c network/xdp_outbound.c -o network/xdp_outbound.o
+          fi
+
+      - name: Optional: place Firefox binary
+        run: |
+          mkdir -p bin/firefox
+          # Copy or download your hardened Firefox build to bin/firefox/firefox
+          echo "[INFO] Provide hardened Firefox at bin/firefox/firefox before release."
+
+      - name: Run smoke tests
+        run: |
+          python -m compileall lucid_launcher.py core modules network pythonlib lucid_commander.py
+
+      - name: Run pytest (if tests/ exists)
+        run: |
+          if [ -d tests ]; then
+            if [ -f tests/local-requirements.txt ]; then
+              pip install -r tests/local-requirements.txt
+            fi
+            pip install pytest
+            pytest -q
+          else
+            echo "[INFO] No tests/ directory; skipping pytest."
+          fi
+
+      - name: Package release bundle
+        run: |
+          mkdir -p dist
+          tar czf dist/lucid_empire_linux_bundle.tgz \
+            lucid_commander.py \
+            lucid_launcher.py \
+            start_lucid.sh \
+            LUCID_V5_MANUAL.md \
+            gui_requirements.txt \
+            bin
+
+      - name: Archive artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-build-artifacts
+          path: |
+            network/xdp_outbound.o
+            bin/firefox/
+            lucid_commander.py
+            lucid_launcher.py
+            start_lucid.sh
+            LUCID_V5_MANUAL.md
+            dist/lucid_empire_linux_bundle.tgz
