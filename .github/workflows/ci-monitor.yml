@@ -1,72 +1,120 @@
-name: CI Monitor
+name: Build Lucid Empire .deb Bundle (OFFENSIVE/BINARY MODE)
 
 on:
-  schedule:
-    - cron: '*/15 * * * *' # every 15 minutes
+  push:
+    branches: [ main, master ]
   workflow_dispatch:
 
-permissions:
-  actions: write
-  issues: write
-  pull-requests: write
-
 jobs:
-  monitor:
-    runs-on: ubuntu-latest
+  build-oblivion-bundle:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    env:
+      DEBIAN_FRONTEND: noninteractive
+      L_E_OUTDIR: lucid-empire-bundle
+
     steps:
-      - name: Rerun failing build-linux runs and notify PRs
-        uses: actions/github-script@v6
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Install System Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential python3 python3-venv python3-pip \
+            fakeroot devscripts dpkg-dev \
+            libffi-dev libmagic1 libxdp1 libxdp-dev \
+            zip unzip curl wget git lsb-release ca-certificates \
+            pkg-config libssl-dev gcc g++ make \
+            docker.io
+          pip3 install --upgrade pip wheel
+
+      - name: Prepare Output Staging Directory
+        run: |
+          rm -rf $L_E_OUTDIR
+          mkdir -p $L_E_OUTDIR/opt/lucid-empire
+          mkdir -p $L_E_OUTDIR/DEBIAN
+
+      - name: Setup Python Venv & Install Python Dependencies
+        run: |
+          python3 -m venv $L_E_OUTDIR/opt/lucid-empire/venv
+          $L_E_OUTDIR/opt/lucid-empire/venv/bin/pip install --upgrade pip
+          $L_E_OUTDIR/opt/lucid-empire/venv/bin/pip install -r requirements.txt
+
+      - name: Build C++/Kernel/XDP/Native Patches (if present)
+        run: |
+          # Recursively build all Makefiles (C++, kernel, juggler, XDP etc)
+          find . -type f -name 'Makefile' | while read mk; do
+            echo "Building: $mk"
+            (cd "$(dirname "$mk")" && make)
+          done
+          # Copy built .so, .out, .ko, or patched artifacts to bundle
+          find . -type f \( -name "*.so" -o -name "*.out" -o -name "*.ko" \) | while read f; do
+            cp --parents "$f" $L_E_OUTDIR/opt/lucid-empire/
+          done
+
+      - name: Stage Application Source + Assets
+        run: |
+          rsync -av --exclude ".git" --exclude "__pycache__" --exclude "*.pyc" \
+            ./ $L_E_OUTDIR/opt/lucid-empire/
+
+      - name: Stage Patched/Payload Browser (if present)
+        run: |
+          # Copy patched browser (Firefox or Chromium) if built/patched
+          for loc in bin/firefox/firefox obj-*/dist/bin/firefox; do
+            if [ -f "$loc" ]; then
+              mkdir -p $L_E_OUTDIR/opt/lucid-empire/browser/
+              cp -R "$(dirname $loc)" $L_E_OUTDIR/opt/lucid-empire/browser/
+            fi
+          done
+
+      - name: Add Systemd Persistence & Post-install Hooks
+        run: |
+          cat > $L_E_OUTDIR/opt/lucid-empire/lucid-empire.service <<EOF
+          [Unit]
+          Description=Lucid Empire C2 (Offensive Anti-Detect Suite)
+          After=network.target
+
+          [Service]
+          Type=simple
+          ExecStart=/opt/lucid-empire/venv/bin/python3 /opt/lucid-empire/D3MON_CORE.py
+          WorkingDirectory=/opt/lucid-empire
+          Restart=always
+
+          [Install]
+          WantedBy=multi-user.target
+          EOF
+          chmod 644 $L_E_OUTDIR/opt/lucid-empire/lucid-empire.service
+
+      - name: Write DEBIAN/control and postinst Scripts
+        run: |
+          cat > $L_E_OUTDIR/DEBIAN/control <<EOF
+          Package: lucid-empire
+          Version: 5.0.9999
+          Section: admin
+          Priority: optional
+          Architecture: all
+          Maintainer: Dva.12 <dev@xai.com>
+          Description: Lucid Empire v5 — Offensive Tier 1 Anti-Detect Suite (MAX_AGENCY, OBLIVION READY)
+           Bridges Python, C++, XDP, and patched browser anti-detect. For OPERATOR use only. 
+          Depends: python3, python3-venv, python3-pip, libffi-dev, libmagic1, libxdp1
+          EOF
+
+          # Post-install hook: enable systemd service
+          cat > $L_E_OUTDIR/DEBIAN/postinst <<'EOF2'
+          #!/bin/bash
+          systemctl enable /opt/lucid-empire/lucid-empire.service
+          systemctl start lucid-empire.service
+          EOF2
+          chmod 755 $L_E_OUTDIR/DEBIAN/postinst
+
+      - name: Build .deb Package (fakeroot; preserve ownership)
+        run: |
+          fakeroot dpkg-deb --build $L_E_OUTDIR lucid-empire_v5_oblivion_all.deb
+
+      - name: Upload .deb Artifact
+        uses: actions/upload-artifact@v4
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            const workflow_id = 'build-linux.yml';
-
-            // Fetch recent workflow runs for the build-linux workflow
-            const runsResp = await github.rest.actions.listWorkflowRunsForRepo({
-              owner,
-              repo,
-              workflow_id,
-              per_page: 50,
-            });
-
-            const runs = runsResp.data.workflow_runs || [];
-            const now = new Date();
-
-            for (const run of runs) {
-              try {
-                // Only care about fix/* branches and reasonably recent runs
-                if (!run.head_branch || !run.head_branch.startsWith('fix/')) continue;
-                const updatedAt = new Date(run.updated_at);
-                const hoursSinceUpdate = (now - updatedAt) / (1000 * 60 * 60);
-                if (hoursSinceUpdate > 48) continue; // ignore old runs
-
-                // Only rerun completed failed/cancelled runs
-                if (run.status === 'in_progress' || run.status === 'queued') continue;
-                if (run.conclusion === 'success') continue;
-
-                // Trigger a rerun of this run
-                await github.rest.actions.reRunWorkflow({ owner, repo, run_id: run.id });
-
-                // Try to find an open PR for this branch
-                const head = `${owner}:${run.head_branch}`;
-                const prsResp = await github.rest.pulls.list({ owner, repo, head, state: 'open' });
-                const prs = prsResp.data || [];
-
-                const message = `🚨 **CI Monitor:** Automatically re-ran failing workflow run for branch **${run.head_branch}**\n\n- Run: ${run.html_url}\n- Previous conclusion: ${run.conclusion}\n\nThis run was re-triggered automatically by the CI monitor. If failures persist, please investigate and push a fix.`;
-
-                if (prs.length > 0) {
-                  // Comment on the first matching PR
-                  const prNum = prs[0].number;
-                  await github.rest.issues.createComment({ owner, repo, issue_number: prNum, body: message });
-                } else {
-                  // Open a new issue to track the failing branch
-                  const title = `CI Monitor: failing build for ${run.head_branch}`;
-                  await github.rest.issues.create({ owner, repo, title, body: message });
-                }
-
-              } catch (err) {
-                core.warning(`Failed processing run ${run.id}: ${err}`);
-              }
-            }
+          name: lucid-empire_v5_oblivion_all.deb
+          path: lucid-empire_v5_oblivion_all.deb
