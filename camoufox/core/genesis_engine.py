@@ -1,20 +1,63 @@
 # LUCID EMPIRE :: GENESIS ENGINE v2.1
 # Purpose: Orchestrates Temporal Displacement and Persona-based Warm-Up Cycles.
 
+import sys
 import os
+# Dva.12 Patch: Allow visibility of sibling modules
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import json
 import asyncio
 import random
 import logging
 import datetime
+import time
 import pytz
 from astral import LocationInfo
 from astral.sun import sun
 from playwright.async_api import async_playwright
-from modules.commerce_injector import inject_trust_anchors
+from modules.commerce_injector import inject_trust_anchors, inject_commerce_vector
 from modules.biometric_mimicry import BiometricMimicry
 
 PROFILE_DIR = "./lucid_profile_data"
+
+# Time control file path
+TIME_CONTROL_FILE = "/tmp/lucid_time_control"
+
+def initialize_time_warp(start_date_delta_days=90):
+    """Initialize the time control file for libfaketime"""
+    if not os.path.exists(TIME_CONTROL_FILE):
+        open(TIME_CONTROL_FILE, 'a').close()
+    initial_time = datetime.datetime.now() - datetime.timedelta(days=start_date_delta_days)
+    os.utime(TIME_CONTROL_FILE, (initial_time.timestamp(), initial_time.timestamp()))
+
+def update_time_warp(seconds_elapsed_real, days_to_advance_fake):
+    """Update the control file to advance fake time"""
+    current_fake_time = datetime.datetime.fromtimestamp(os.path.getmtime(TIME_CONTROL_FILE))
+    new_fake_time = current_fake_time + datetime.timedelta(days=days_to_advance_fake)
+    os.utime(TIME_CONTROL_FILE, (new_fake_time.timestamp(), new_fake_time.timestamp()))
+    time.sleep(seconds_elapsed_real)
+
+def launch_browser_with_time_warp(user_data_dir, proxy_config=None):
+    """Launch browser with libfaketime integration"""
+    env = {
+        "LD_PRELOAD": "/path/to/libfaketime.so.1",
+        "FAKETIME": "@",
+        "FAKETIME_FOLLOW_FILE": TIME_CONTROL_FILE,
+        "FAKETIME_DONT_RESET": "1",
+        "FAKETIME_DONT_FAKE_MONOTONIC": "1"
+    }
+    
+    if proxy_config:
+        env.update(proxy_config)
+        
+    with sync_playwright() as p:
+        browser = p.firefox.launch_persistent_context(
+            user_data_dir=user_data_dir,
+            env=env,
+            headless=False,
+            proxy=proxy_config
+        )
+        return browser
 
 class GenesisEngine:
     def __init__(self, persona="student", proxy_geo="New York", proxy_country="US"):
@@ -168,6 +211,8 @@ class GenesisEngine:
 
         self.logger.info(f" [>] TIME WARP: T-{days_ago} DAYS | PHASE: {phase_name} | PERSONA: {self.persona}")
         
+        initialize_time_warp(days_ago)
+        
         env = self.set_time_warp(days_ago)
         async with async_playwright() as p:
             # Persistent context ensures cookies/history are saved
@@ -199,7 +244,7 @@ class GenesisEngine:
                     if phase_name == "KILL_CHAIN":
                         # Commerce Injection (Plan 3.3.3)
                         platform = "shopify" if "apple" in url else "stripe"
-                        await inject_trust_anchors(page, platform=platform)
+                        await inject_commerce_vector(page, platform=platform)
                     
                     await asyncio.sleep(random.randint(5, 15))
                 except Exception as e:

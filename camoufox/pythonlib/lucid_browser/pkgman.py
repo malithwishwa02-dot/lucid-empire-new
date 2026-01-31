@@ -22,7 +22,7 @@ from yaml import CLoader, load
 
 from .__version__ import CONSTRAINTS
 from .exceptions import (
-    LucidEmpireNotInstalled,
+    Lucid EmpireNotInstalled,
     MissingRelease,
     UnsupportedArchitecture,
     UnsupportedOS,
@@ -182,7 +182,7 @@ class GitHubDownloader:
         self.missing_asset_error()
 
 
-class LucidEmpireFetcher(GitHubDownloader):
+class Lucid EmpireFetcher(GitHubDownloader):
     """
     Handles fetching and installing the latest version of Lucid Empire.
     """
@@ -429,7 +429,7 @@ def lucid_browser_path(download_if_missing: bool = True) -> Path:
             raise UnsupportedVersion("Lucid Empire executable is outdated.")
 
     # Install and recheck
-    LucidEmpireFetcher().install()
+    Lucid EmpireFetcher().install()
     return lucid_browser_path()
 
 
@@ -449,7 +449,7 @@ def launch_path() -> str:
     launch_path = get_path(LAUNCH_FILE[OS_NAME])
     if not os.path.exists(launch_path):
         # Not installed error
-        raise LucidEmpireNotInstalled(
+        raise Lucid EmpireNotInstalled(
             f"Lucid Empire is not installed at {lucid_browser_path()}. Please run `lucid_browser fetch` to install."
         )
     return launch_path

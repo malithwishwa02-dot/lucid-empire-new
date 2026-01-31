@@ -16,13 +16,13 @@ from lucid_browser.virtdisplay import VirtualDisplay
 from .utils import launch_options, sync_attach_vd
 
 
-class LucidEmpire(PlaywrightContextManager):
+class Lucid Empire(PlaywrightContextManager):
     """
     Wrapper around playwright.sync_api.PlaywrightContextManager that automatically
     launches a browser and closes it when the context manager is exited.
     """
 
-    def __init__(self, fingerprint: str, **kwargs):
+    def __init__(self, fingerprint=None, **kwargs):
         """
         Initializes the Lucid Empire Sovereign Browser.
         
@@ -41,16 +41,20 @@ class LucidEmpire(PlaywrightContextManager):
             )
 
         # 2. JSON Template Ingestion
-        if not os.path.exists(fingerprint):
-            raise FileNotFoundError(
-                f"LUCID PANIC: Template file not found at {fingerprint}"
-            )
-        
-        try:
-            with open(fingerprint, 'r') as f:
-                self.config = json.load(f)
-        except json.JSONDecodeError:
-            raise ValueError("LUCID PANIC: Corrupted Golden Template JSON.")
+        if isinstance(fingerprint, str):
+            if not os.path.exists(fingerprint):
+                raise FileNotFoundError(
+                    f"LUCID PANIC: Template file not found at {fingerprint}"
+                )
+            
+            try:
+                with open(fingerprint, 'r') as f:
+                    self.config = json.load(f)
+            except json.JSONDecodeError:
+                raise ValueError("LUCID PANIC: Corrupted Golden Template JSON.")
+        else:
+            # Support direct dictionary injection for testing/memory-only ops
+            self.config = fingerprint
 
         # 3. Schema Validation (Prevent Leak by Omission)
         # These vectors MUST be present to override the host hardware.

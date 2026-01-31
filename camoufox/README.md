@@ -41,10 +41,11 @@ This repository has been transformed into the **Lucid Empire** platform, a weapo
 - **Status**: INSTALLED
 - **Usage**:
   ```bash
-  python lucid_launcher.py list
-  python lucid_launcher.py warmup --profile "profile_001"
-  python lucid_launcher.py proxy --profile "profile_001" --url "socks5://user:pass@host:port"
-  ```
+  python dashboard/main.py list
+  python dashboard/main.py warmup --profile "profile_001"
+  python dashboard/main.py proxy --profile "profile_001" --url "socks5://user:pass@host:port"
+
+Note: Prefer using `python start_empire.py` to launch the dashboard (it will ensure environment dependencies and provide a verified entry point).  ```
 
 ### 7. Biometric Humanization (`modules/biometric_mimicry.py`)
 - **Status**: ACTIVE
