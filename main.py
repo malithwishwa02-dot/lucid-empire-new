@@ -35,7 +35,11 @@ LUCID_CONFIG = {
 
     # Behavior & Networking
     "humanize": True,  # Smooth mouse movements
-    "geoip": True      # Sync Timezone/Locale to IP
+    "geoip": True,     # Sync Timezone/Locale to IP
+    "env": {
+        "LUCID_USER_AGENT": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0",
+        "LUCID_FONT_HIJACK_SEED": str(random.randint(1, 1000000)),
+    }
 }
 
 

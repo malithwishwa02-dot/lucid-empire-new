@@ -19,10 +19,8 @@ RUN apt-get update && \
     libx11-xcb1 libxt6 libgbm1 libdrm2 \
     libfreetype6 fontconfig \
     xvfb ttf-mscorefonts-installer \
-    curl unzip tini && \
-    # Clean up apt cache to keep image small
+    curl unzip tini libfaketime && \
     rm -rf /var/lib/apt/lists/* && \
-    # Rebuild font cache
     fc-cache -f -v
 
 # 2. USER SECURITY (NON-ROOT)
