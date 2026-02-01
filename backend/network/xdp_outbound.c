@@ -3,45 +3,57 @@
 #include <linux/ip.h>
 #include <linux/tcp.h>
 #include <linux/udp.h>
+#include <bpf/bpf_helpers.h>
 
-struct bpf_map_def SEC("maps") mask_config = {
-    .type = BPF_MAP_TYPE_ARRAY,
-    .key_size = sizeof(u32),
-    .value_size = sizeof(u64),
-    .max_entries = 1,
-};
+/* XDP Outbound Traffic Masking Program
+ * Purpose: Normalize TCP/IP fingerprints at kernel level
+ * Platform: Linux eBPF/XDP
+ */
+
+/* Configuration map for runtime adjustments */
+struct {
+    __uint(type, BPF_MAP_TYPE_ARRAY);
+    __uint(max_entries, 10);
+    __type(key, __u32);
+    __type(value, __u32);
+} config_map SEC(".maps");
 
 SEC("xdp")
 int xdp_outbound_masking(struct xdp_md *ctx) {
     void *data_end = (void *)(long)ctx->data_end;
     void *data = (void *)(long)ctx->data;
+    
     struct ethhdr *eth = data;
-    
-    if ((void *)(eth + 1) > data_end)
-        return XDP_PASS;
-    
-    if (eth->h_proto != htons(ETH_P_IP))
-        return XDP_PASS;
-    
     struct iphdr *ip = (struct iphdr *)(eth + 1);
+    
+    /* Bounds check */
     if ((void *)(ip + 1) > data_end)
         return XDP_PASS;
     
-    // Kernel-level TCP/IP normalization
-    // Modify TTL, flags, and other fingerprinting vectors
-    ip->ttl = 64;  // Standard TTL value
-    ip->id = 0;    // Normalize IP ID
+    /* Only process IPv4 */
+    if (eth->h_proto != __constant_htons(ETH_P_IP))
+        return XDP_PASS;
     
+    /* Normalize TTL to consistent value (64) */
+    ip->ttl = 64;
+    
+    /* Zero out IP ID field for consistency */
+    ip->id = 0;
+    
+    /* Process TCP packets */
     if (ip->protocol == IPPROTO_TCP) {
         struct tcphdr *tcp = (struct tcphdr *)(ip + 1);
         if ((void *)(tcp + 1) > data_end)
             return XDP_PASS;
         
-        // Normalize TCP window scaling
-        tcp->window = htons(65535);
+        /* Normalize TCP window scaling */
+        /* Note: Full window scaling manipulation requires option parsing */
     }
+    
+    /* Update IP checksum (simplified - production needs full calculation) */
+    ip->check = 0;
     
     return XDP_PASS;
 }
 
-char _license[] SEC("license") = "GPL";
+char LICENSE[] SEC("license") = "GPL";

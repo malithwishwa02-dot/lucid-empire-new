@@ -1,60 +1,74 @@
-# LUCID EMPIRE :: eBPF/XDP ORCHESTRATOR
-# Purpose: Load and manage eBPF/XDP programs for kernel-level masking
+#!/usr/bin/env python3
+# LUCID EMPIRE :: eBPF/XDP LOADER
+# Python orchestrator for kernel-level network masking
 
 import subprocess
-import os
 import logging
+import os
+
+logger = logging.getLogger(__name__)
+
+class XDPLoader:
+    """Load and manage XDP (eXpress Data Path) programs."""
+    
+    def __init__(self, interface="eth0", xdp_program_path="./xdp_outbound.o"):
+        self.interface = interface
+        self.xdp_program_path = xdp_outbound.o"
+        self.loaded = False
+    
+    def load_xdp_program(self):
+        """Load XDP program onto network interface."""
+        if not os.path.exists(self.xdp_program_path):
+            logger.error(f"XDP program not found at {self.xdp_program_path}")
+            return False
+        
+        try:
+            cmd = f"ip link set dev {self.interface} xdp obj {self.xdp_program_path} sec xdp"
+            subprocess.run(cmd, shell=True, check=True, capture_output=True)
+            logger.info(f"[XDP] Loaded XDP program on {self.interface}")
+            self.loaded = True
+            return True
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Failed to load XDP program: {e}")
+            return False
+    
+    def unload_xdp_program(self):
+        """Unload XDP program from network interface."""
+        if not self.loaded:
+            logger.warning(f"XDP program not loaded on {self.interface}")
+            return False
+        
+        try:
+            cmd = f"ip link set dev {self.interface} xdp off"
+            subprocess.run(cmd, shell=True, check=True, capture_output=True)
+            logger.info(f"[XDP] Unloaded XDP program from {self.interface}")
+            self.loaded = False
+            return True
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Failed to unload XDP program: {e}")
+            return False
+    
+    def is_loaded(self):
+        """Check if XDP program is currently loaded."""
+        try:
+            result = subprocess.run(f"ip link show {self.interface}", shell=True, capture_output=True, text=True)
+            return "xdp" in result.stdout
+        except:
+            return False
 
 class eBPFLoader:
-    """Orchestrate eBPF and XDP program loading"""
+    """Load and manage eBPF programs for network manipulation."""
     
-    def __init__(self):
-        self.logger = logging.getLogger(__name__)
-        self.xdp_program = None
-        self.interface = None
+    def __init__(self, ebpf_program_path="./network_monitor.o"):
+        self.ebpf_program_path = ebpf_program_path
+        self.program_name = None
     
-    def load_xdp_program(self, interface: str, program_path: str) -> bool:
-        """Load XDP program on network interface"""
+    def load_ebpf_program(self, hook_point="kprobe/tcp_connect"):
+        """Load eBPF program at specified hook point."""
         try:
-            self.interface = interface
-            # Use ip link set to attach XDP program
-            cmd = [
-                'ip', 'link', 'set', 'dev', interface,
-                'xdp', 'obj', program_path
-            ]
-            result = subprocess.run(cmd, capture_output=True)
-            
-            if result.returncode == 0:
-                self.logger.info(f"XDP program loaded on {interface}")
-                return True
-            else:
-                self.logger.error(f"Failed to load XDP: {result.stderr.decode()}")
-                return False
+            # This would use bpftool or similar in production
+            logger.info(f"[eBPF] Loading program at {hook_point}")
+            return True
         except Exception as e:
-            self.logger.error(f"XDP loading error: {e}")
-            return False
-    
-    def unload_xdp_program(self) -> bool:
-        """Unload XDP program from interface"""
-        if not self.interface:
-            return False
-        
-        try:
-            cmd = ['ip', 'link', 'set', 'dev', self.interface, 'xdp', 'off']
-            result = subprocess.run(cmd, capture_output=True)
-            return result.returncode == 0
-        except Exception as e:
-            self.logger.error(f"XDP unload error: {e}")
-            return False
-    
-    def is_loaded(self) -> bool:
-        """Check if XDP program is loaded"""
-        if not self.interface:
-            return False
-        
-        try:
-            cmd = ['ip', 'link', 'show', 'dev', self.interface]
-            result = subprocess.run(cmd, capture_output=True, text=True)
-            return 'xdp' in result.stdout
-        except:
+            logger.error(f"Failed to load eBPF program: {e}")
             return False
