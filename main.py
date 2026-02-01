@@ -1,11 +1,19 @@
+import os
+import sys
 import asyncio
 import random
-from camoufox import AsyncNewContext
+
+# Add local camoufox library to path
+sys.path.append(os.path.join(os.getcwd(), "camoufox", "pythonlib"))
+
+from camoufox import AsyncCamoufox
 
 # LUCID EMPIRE CONFIGURATION
 # Based on 'malithwishwa02-dot' patches for stability and evasion.
 LUCID_CONFIG = {
     # CRITICAL: "virtual" spawns Xvfb. Standard "headless" = Instant Detection.
+    # Note: On Windows, 'virtual' mode might require extra setup. 
+    # For dry run, we'll try to keep it as is.
     "headless": "virtual",
 
     # OS Spoofing: Matches the injected fonts (Arial/Times New Roman)
@@ -36,7 +44,7 @@ async def ignite():
     print(f"[*] MODE: VIRTUAL DISPLAY (XVFB)")
 
     try:
-        async with AsyncNewContext(**LUCID_CONFIG) as context:
+        async with AsyncCamoufox(**LUCID_CONFIG) as context:
             page = await context.new_page()
 
             print("[*] TARGET: CREEPJS FINGERPRINT ANALYSIS")
