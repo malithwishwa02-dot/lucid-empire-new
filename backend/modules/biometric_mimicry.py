@@ -1,48 +1,45 @@
 # LUCID EMPIRE :: BIOMETRIC MIMICRY
-# Purpose: Simulate realistic human biometric patterns
+# Behavioral simulation for human-like interactions
 
 import asyncio
 import random
-import time
 
 class BiometricMimicry:
-    """Simulate realistic human behavioral patterns"""
+    """Simulates realistic human behavior patterns."""
     
-    def __init__(self):
-        self.typing_speeds = {
-            'min': 30,  # ms between keypresses
-            'max': 150
-        }
-        self.click_jitter = (10, 50)  # pixels
-        self.reaction_time = (300, 1500)  # ms
+    def __init__(self, page):
+        self.page = page
+        self.cursor_x = 0
+        self.cursor_y = 0
     
-    async def simulate_typing(self, page, text, selector):
-        """Simulate realistic typing patterns"""
-        await page.focus(selector)
+    async def human_scroll(self, max_scroll=3):
+        """Perform realistic human-like scrolling."""
+        for _ in range(max_scroll):
+            scroll_amount = random.randint(100, 500)
+            await self.page.evaluate(f"window.scrollBy(0, {scroll_amount})")
+            await asyncio.sleep(random.uniform(0.5, 2.0))
+    
+    async def human_move(self, x, y, steps=10):
+        """Simulate mouse movement to coordinates."""
+        for i in range(steps):
+            progress = i / steps
+            current_x = int(self.cursor_x + (x - self.cursor_x) * progress)
+            current_y = int(self.cursor_y + (y - self.cursor_y) * progress)
+            await self.page.mouse.move(current_x, current_y)
+            await asyncio.sleep(random.uniform(0.01, 0.05))
+        self.cursor_x = x
+        self.cursor_y = y
+    
+    async def human_click(self, selector, delay=True):
+        """Click with realistic delay patterns."""
+        if delay:
+            await asyncio.sleep(random.uniform(0.5, 1.5))
+        await self.page.click(selector)
+    
+    async def human_type(self, selector, text, wpm=40):
+        """Type text with realistic keystroke timing."""
+        await self.page.focus(selector)
         for char in text:
-            await page.type(selector, char, delay=random.randint(
-                self.typing_speeds['min'],
-                self.typing_speeds['max']
-            ))
-            await asyncio.sleep(0.01)
-    
-    async def simulate_reaction_time(self):
-        """Simulate human reaction time before interaction"""
-        delay = random.randint(
-            self.reaction_time[0],
-            self.reaction_time[1]
-        ) / 1000
-        await asyncio.sleep(delay)
-    
-    async def simulate_click_jitter(self, page, selector):
-        """Add realistic mouse jitter to clicks"""
-        element = await page.query_selector(selector)
-        if element:
-            box = await element.bounding_box()
-            jitter_x = random.randint(self.click_jitter[0], self.click_jitter[1])
-            jitter_y = random.randint(self.click_jitter[0], self.click_jitter[1])
-            click_x = box['x'] + jitter_x
-            click_y = box['y'] + jitter_y
-            await page.mouse.move(click_x, click_y)
-            await self.simulate_reaction_time()
-            await page.mouse.click(click_x, click_y)
+            await self.page.keyboard.type(char)
+            delay = random.gauss(60 / wpm, 0.1)  # Gaussian distribution
+            await asyncio.sleep(delay / 1000)  # Convert ms to seconds

@@ -1,46 +1,46 @@
 # LUCID EMPIRE :: HUMANIZATION ENGINE
-# Purpose: Add human-like movement and behavior patterns
+# Mouse and scroll humanization algorithms
 
-import asyncio
 import random
 import math
 
 class HumanizationEngine:
-    """Generate realistic human-like interactions"""
+    """Generates human-like interaction patterns."""
     
     @staticmethod
-    async def human_mouse_move(page, start_x, start_y, end_x, end_y, duration=1.0):
-        """Move mouse in a curved, human-like path"""
-        steps = int(duration * 100)  # 100 steps per second
+    def generate_mouse_path(start_x, start_y, end_x, end_y, num_points=20):
+        """Generate realistic curved mouse path using Bézier curves."""
+        control_x = (start_x + end_x) / 2 + random.randint(-50, 50)
+        control_y = (start_y + end_y) / 2 + random.randint(-50, 50)
         
-        for i in range(steps):
-            t = i / steps
-            # Easing function for natural movement
-            eased_t = t * t * (3 - 2 * t)  # smoothstep
-            
-            current_x = start_x + (end_x - start_x) * eased_t
-            current_y = start_y + (end_y - start_y) * eased_t
-            
-            # Add subtle jitter
-            jitter_x = random.gauss(0, 2)
-            jitter_y = random.gauss(0, 2)
-            
-            await page.mouse.move(
-                current_x + jitter_x,
-                current_y + jitter_y
-            )
-            await asyncio.sleep(0.01)
+        points = []
+        for t in [i / num_points for i in range(num_points + 1)]:
+            # Quadratic Bézier curve
+            x = (1-t)**2 * start_x + 2*(1-t)*t * control_x + t**2 * end_x
+            y = (1-t)**2 * start_y + 2*(1-t)*t * control_y + t**2 * end_y
+            points.append((int(x), int(y)))
+        
+        return points
     
     @staticmethod
-    async def scroll_naturally(page, distance=1000, duration=5.0):
-        """Scroll page with natural deceleration"""
-        steps = int(duration * 30)  # 30 steps per second
-        
-        for i in range(steps):
-            progress = i / steps
-            # Easing out for natural deceleration
-            eased = 1 - (1 - progress) ** 3
-            scroll_amount = distance * eased
-            
-            await page.evaluate(f"window.scrollBy(0, {int(scroll_amount)});")
-            await asyncio.sleep(1/30)
+    def generate_scroll_pattern(max_scroll=5000, natural=True):
+        """Generate realistic scroll pattern."""
+        if natural:
+            # Human scrolling: variable speeds with pauses
+            scrolls = []
+            current = 0
+            while current < max_scroll:
+                amount = random.choice(range(100, 500, 50))
+                scrolls.append(amount)
+                current += amount
+            return scrolls
+        else:
+            return [max_scroll]
+    
+    @staticmethod
+    def get_keystroke_delay(wpm=40):
+        """Get realistic keystroke delay based on words-per-minute."""
+        # Average keystroke time in milliseconds
+        base_delay = (60000 / wpm) / 5  # 5 chars per word
+        # Add human variability (Gaussian distribution)
+        return max(0.01, random.gauss(base_delay, base_delay * 0.3))

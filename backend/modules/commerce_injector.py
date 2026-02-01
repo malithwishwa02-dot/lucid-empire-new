@@ -1,51 +1,56 @@
 # LUCID EMPIRE :: COMMERCE INJECTOR
-# Purpose: Injects localStorage artifacts and dispatches StorageEvents
+# Trust anchor injection for e-commerce signals
 
 import asyncio
-import random
+import json
 
-class CommerceInjector:
-    def __init__(self, humanizer=None):
-        self.humanizer = humanizer
-
-    async def random_sleep(self, min_s=0.5, max_s=2.0):
-        await asyncio.sleep(random.uniform(min_s, max_s))
-
-    async def inject_trust_anchors(self, page, key, value):
-        """Inject a trust anchor (key-value pair) into localStorage and dispatch a storage event"""
-        # Tap 1: Write the data
-        await page.evaluate(
-            f"""
-            localStorage.setItem('{key}', '{value}');
-            """
-        )
-
-        # Tap 2: Fabricate and dispatch the StorageEvent
-        await page.evaluate(
-            f"""
-            const event = new StorageEvent('storage', {{
+async def inject_trust_anchors(page):
+    """Inject trust anchors into localStorage and dispatch events."""
+    anchors = {
+        "_ga": "GA1.2.1234567890.1234567890",
+        "_gid": "GA1.2.1234567891.1234567891",
+        "_gat": "1",
+    }
+    
+    # Double-tap injection: write + synthetic event
+    for key, value in anchors.items():
+        await page.evaluate(f"localStorage.setItem('{key}', '{value}')")
+        # Dispatch storage event for realistic detection
+        await page.evaluate(f"""
+            window.dispatchEvent(new StorageEvent('storage', {{
                 key: '{key}',
                 newValue: '{value}',
                 url: window.location.href
-            }});
-            window.dispatchEvent(event);
-            """
-        )
-        
-        await self.random_sleep()
+            }}))
+        """)
 
-    async def inject_commerce_signals(self, page):
-        """Inject realistic commerce-related localStorage signals"""
-        signals = {
-            '_ga': 'GA1.2.123456789.1234567890',
-            'checkout_flow': 'initiated',
-            'cart_items': '3',
-            'last_view': 'product_page'
+async def inject_commerce_vector(page, platform="shopify"):
+    """Inject commerce signals (cart, checkout flows)."""
+    if platform == "shopify":
+        commerce_signals = {
+            "cart_items": json.dumps([{"id": "1", "quantity": 1, "price": 9999}]),
+            "checkout_flow": "initiated",
+            "payment_method": "credit_card"
         }
-        
-        for key, value in signals.items():
-            await self.inject_trust_anchors(page, key, value)
+    elif platform == "stripe":
+        commerce_signals = {
+            "stripe_session": "test_session_123",
+            "payment_status": "processing"
+        }
+    else:
+        commerce_signals = {}
+    
+    for key, value in commerce_signals.items():
+        if isinstance(value, str):
+            await page.evaluate(f"localStorage.setItem('{key}', '{value}')")
 
-    async def cleanup(self, page):
-        """Clean up injected artifacts"""
-        await page.evaluate("localStorage.clear();")
+async def inject_commerce_signals(page):
+    """Comprehensive commerce signal injection."""
+    signals = {
+        "last_purchase_date": "2024-01-15",
+        "purchase_frequency": "weekly",
+        "avg_order_value": "125.50",
+    }
+    
+    for key, value in signals.items():
+        await page.evaluate(f"localStorage.setItem('{key}', '{value}')")
