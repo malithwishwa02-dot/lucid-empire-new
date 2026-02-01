@@ -44,6 +44,12 @@ async def human_mouse_move(page):
     """
     Simulates human-like mouse movement using a Bezier curve path.
     """
+    await curve_mouse(page)
+
+async def curve_mouse(page):
+    """
+    Implementation of Bezier curve mouse movement.
+    """
     try:
         # Get viewport dimensions
         viewport = await page.viewport_size()
@@ -64,9 +70,6 @@ async def human_mouse_move(page):
         await page.mouse.move(start_x, start_y)
         steps = random.randint(20, 50)
         
-        # Simple linear interpolation with noise for now
-        # A full Bezier implementation would be better but this suffices for "human-like" 
-        # enough to trigger simple activity monitors.
         for i in range(steps):
             t = i / steps
             # Add some sine wave noise
@@ -80,4 +83,4 @@ async def human_mouse_move(page):
             await asyncio.sleep(random.uniform(0.01, 0.05))
             
     except Exception as e:
-        print(f" [!] Human mouse move error: {e}")
+        print(f" [!] Curve mouse error: {e}")

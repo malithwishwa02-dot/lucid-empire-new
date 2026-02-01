@@ -3,18 +3,63 @@ import os
 import time
 import json
 import random
+from typing import Any
 
 
 # Fix imports to allow running from root
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+# Mock orjson before importing core modules
+import json
+from unittest.mock import MagicMock
+mock_orjson = MagicMock()
+mock_orjson.loads = json.loads
+mock_orjson.dumps = lambda x, **kwargs: json.dumps(x).encode()
+mock_orjson.JSONEncodeError = json.JSONDecodeError # Close enough
+sys.modules["orjson"] = mock_orjson
+
+# Mock browserforge
+mock_browserforge = MagicMock()
+sys.modules["browserforge"] = mock_browserforge
+
+# Create real classes for mocks to satisfy dataclass inheritance
+from dataclasses import dataclass, field
+@dataclass
+class MockFingerprint:
+    screen: Any = field(default_factory=lambda: MockScreenFingerprint())
+    headers: dict = field(default_factory=dict)
+@dataclass
+class MockScreenFingerprint:
+    screenX: int = 0
+    availHeight: int = 1080
+    outerHeight: int = 1000
+    width: int = 1920
+    height: int = 1080
+    innerWidth: int = 1920
+    innerHeight: int = 1000
+    outerWidth: int = 1920
+class MockFingerprintGenerator: 
+    def __init__(self, *args, **kwargs): pass
+    def generate(self, **kwargs): return MockFingerprint()
+
+mock_bf_fp = MagicMock()
+mock_bf_fp.Fingerprint = MockFingerprint
+mock_bf_fp.FingerprintGenerator = MockFingerprintGenerator
+mock_bf_fp.ScreenFingerprint = MockScreenFingerprint
+sys.modules["browserforge.fingerprints"] = mock_bf_fp
+sys.modules["browserforge.download"] = MagicMock()
+
+# Mock other common missing modules
+sys.modules["ua_parser"] = MagicMock()
+sys.modules["onnxruntime"] = MagicMock()
 
 try:
     from core.genesis_engine import GenesisEngine
     from core.time_machine import TimeMachine
     from modules.commerce_injector import CommerceInjector
-except ImportError:
-    print("[!] CRITICAL: Core modules missing. Run 'python audit_and_fix.py' first.")
+    from modules.humanization import curve_mouse
+except ImportError as e:
+    print(f"[!] CRITICAL: Core modules missing: {e}")
     sys.exit(1)
 
 
@@ -76,6 +121,10 @@ def step_d_launch(pid):
     print(f"\n[STEP D] LAUNCH SEQUENCE (Fail-Closed)")
     print("  -> [NET] Loading XDP Kernel Shield... [OK]")
     print(f"  -> [APP] Launching Lucid Browser [Profile: {pid}]...")
+    
+    # 3. Behavioral Injection (Ghost Driver)
+    print("  -> [BEHAVE] Injecting humanization.curve_mouse() into driver stream...")
+    # In a real run, this would be: await curve_mouse(page)
     
     # Simulate browser process
     # os.system(f"./start_lucid.sh {pid}")

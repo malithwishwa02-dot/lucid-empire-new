@@ -7,7 +7,11 @@ import math
 import time
 import os
 import numpy as np
-from scipy.interpolate import CubicSpline
+try:
+    from scipy.interpolate import CubicSpline
+except ImportError:
+    CubicSpline = None
+
 try:
     import onnxruntime as ort
 except ImportError:
