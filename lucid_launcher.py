@@ -44,11 +44,13 @@ def main():
 
     if args.mode == "genesis":
         # Create temp config for Genesis Engine
-        temp_cfg = f"/tmp/{args.profile_id}.json"
-        with open(temp_cfg, 'w') as f:
+        import tempfile
+        fd, temp_cfg = tempfile.mkstemp(suffix=".json", prefix=f"{args.profile_id}_")
+        with os.fdopen(fd, 'w') as f:
             json.dump(profile, f)
         # Execute Genesis Engine
-        subprocess.run(["python3", "core/genesis_engine.py", "--profile_id", args.profile_id, "--config", temp_cfg])
+        python_exec = sys.executable if sys.executable else "python3"
+        subprocess.run([python_exec, "core/genesis_engine.py", "--profile_id", args.profile_id, "--config", temp_cfg])
         if os.path.exists(temp_cfg): os.remove(temp_cfg)
 
     elif args.mode == "takeover":
