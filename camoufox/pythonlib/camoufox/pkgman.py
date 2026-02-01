@@ -13,12 +13,18 @@ from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 from zipfile import ZipFile
 
 import click
-import orjson
+try:
+    import orjson as json_lib
+except ImportError:
+    import json as json_lib
 import requests
 from platformdirs import user_cache_dir
 from tqdm import tqdm
 from typing_extensions import TypeAlias
-from yaml import CLoader, load
+try:
+    from yaml import CLoader as Loader, load
+except ImportError:
+    from yaml import Loader, load
 
 from .__version__ import CONSTRAINTS
 from .exceptions import (
@@ -118,7 +124,7 @@ class Version:
                 "Please run `camoufox fetch` to install."
             )
         with open(version_path, 'rb') as f:
-            version_data = orjson.loads(f.read())
+            version_data = json_lib.loads(f.read())
             return Version(**version_data)
 
     @staticmethod
@@ -309,7 +315,10 @@ class CamoufoxFetcher(GitHubDownloader):
         Set the version in the INSTALL_DIR/version.json file
         """
         with open(INSTALL_DIR / 'version.json', 'wb') as f:
-            f.write(orjson.dumps({'version': self.version, 'release': self.release}))
+            dumped = json_lib.dumps({'version': self.version, 'release': self.release})
+            if isinstance(dumped, str):
+                dumped = dumped.encode('utf-8')
+            f.write(dumped)
 
     def install(self) -> None:
         """
@@ -526,4 +535,4 @@ def load_yaml(file: str) -> Dict[str, Any]:
     Loads a local YAML file and returns it as a dictionary.
     """
     with open(LOCAL_DATA / file, 'r') as f:
-        return load(f, Loader=CLoader)
+        return load(f, Loader=Loader)

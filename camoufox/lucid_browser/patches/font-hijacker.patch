@@ -7,6 +7,7 @@ index bc0e123f85..52ec46f76b 100644
  #include "gfxUserFontSet.h"
  #include "SharedFontList-impl.h"
 +#include "MaskConfig.hpp"
++#include <cstdlib>
  
  #include "GeckoProfiler.h"
  #include "nsCRT.h"
@@ -15,7 +16,9 @@ index bc0e123f85..52ec46f76b 100644
    mFontPrefs = MakeUnique<FontPrefs>();
  
 +  // Hijack the kFontSystemWhitelistPref pref
-+  if (std::vector<std::string> fontValues = MaskConfig::GetStringList("fonts");
++  if (const char* env = std::getenv("LUCID_FONT_LIST")) {
++    Preferences::SetCString(kFontSystemWhitelistPref, env);
++  } else if (std::vector<std::string> fontValues = MaskConfig::GetStringList("fonts");
 +      !fontValues.empty()) {
 +    std::string fontValuesJoined =
 +        std::accumulate(fontValues.begin(), fontValues.end(), std::string(),

@@ -79,6 +79,7 @@ class GenesisEngine:
         self.location = LocationInfo(proxy_geo, proxy_country)
         self.tz = pytz.timezone(self.location.timezone)
         self.base_dir = base_dir
+        self.strict_mode = False
         if not os.path.exists(base_dir):
             os.makedirs(base_dir)
         logging.basicConfig(level=logging.INFO)
@@ -89,9 +90,19 @@ class GenesisEngine:
         Creates a new browser profile folder.
         If strict_template_path is provided, it copies fingerprints exactly.
         """
-        profile_id = f"{config.get('name', 'ghost')}_{random.randint(1000,9999)}"
+        self.strict_mode = config.get("strict_mode", False)
+        
+        if self.strict_mode:
+            profile_id = f"{config.get('name', 'ghost')}_STRICT"
+            # Ensure uniqueness if folder exists
+            if os.path.exists(os.path.join(self.base_dir, profile_id)):
+                profile_id += f"_{int(time.time())}"
+        else:
+            profile_id = f"{config.get('name', 'ghost')}_{random.randint(1000,9999)}"
+            
         profile_path = os.path.join(self.base_dir, profile_id)
-        os.makedirs(profile_path)
+        if not os.path.exists(profile_path):
+            os.makedirs(profile_path)
 
         # Base Fingerprint Structure
         fingerprint = {
@@ -296,7 +307,7 @@ class GenesisEngine:
             "env": {
                 **env,
                 "LUCID_USER_AGENT": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0",
-                "LUCID_FONT_HIJACK_SEED": str(random.randint(1, 1000000)),
+                "LUCID_FONT_HIJACK_SEED": "1337" if self.strict_mode else str(random.randint(1, 1000000)),
             }
         }
 
@@ -318,14 +329,16 @@ class GenesisEngine:
                     if phase_name == "WARMING" and "apple.com" in url:
                         # Plan 3.3.2: Populate form history
                         await self.populate_form_history(page)
-                        await mimicry.human_move(random.randint(100, 500), random.randint(100, 500))
+                        x, y = (250, 250) if self.strict_mode else (random.randint(100, 500), random.randint(100, 500))
+                        await mimicry.human_move(x, y)
                         
                     if phase_name == "KILL_CHAIN":
                         # Commerce Injection (Plan 3.3.3)
                         platform = "shopify" if "apple" in url else "stripe"
                         await inject_commerce_vector(page, platform=platform)
                     
-                    await asyncio.sleep(random.randint(5, 15))
+                    sleep_time = 10 if self.strict_mode else random.randint(5, 15)
+                    await asyncio.sleep(sleep_time)
                 except Exception as e:
                     self.logger.warning(f"Failed to load {url}: {e}")
 
