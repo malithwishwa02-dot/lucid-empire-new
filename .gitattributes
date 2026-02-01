@@ -1,3 +1,131 @@
-# Enforce LF for CI workflows
-.github/workflows/*.yml text eol=lf
-.github/workflows/*.yaml text eol=lf
+# Git Attributes for Lucid Empire Repository
+# Ensures proper handling of text, binary, and special files
+
+# ============ TEXT FILES (Normalized Line Endings) ============
+*.md        text eol=lf
+*.txt       text eol=lf
+*.py        text eol=lf
+*.sh        text eol=lf
+*.bash      text eol=lf
+*.ps1       text eol=crlf
+*.json      text eol=lf
+*.yaml      text eol=lf
+*.yml       text eol=lf
+*.xml       text eol=lf
+*.c         text eol=lf
+*.h         text eol=lf
+*.java      text eol=lf
+*.js        text eol=lf
+*.css       text eol=lf
+*.html      text eol=lf
+
+# ============ BINARY FILES (No Conversion) ============
+# Executables
+*.exe       binary
+*.dll       binary
+*.so        binary
+*.dylib     binary
+*.ko        binary
+
+# Compiled objects
+*.o         binary
+*.obj       binary
+*.a         binary
+*.lib       binary
+
+# Fonts
+*.ttf       binary
+*.otf       binary
+*.woff      binary
+*.woff2     binary
+*.eot       binary
+
+# Archives
+*.zip       binary
+*.tar.gz    binary
+*.tgz       binary
+*.tar       binary
+*.gz        binary
+*.7z        binary
+*.rar       binary
+
+# Database files
+*.sqlite    binary
+*.sqlite3   binary
+*.db        binary
+
+# Images
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.svg       text
+*.ico       binary
+*.webp      binary
+
+# Videos
+*.mp4       binary
+*.mkv       binary
+*.avi       binary
+*.mov       binary
+
+# Audio
+*.mp3       binary
+*.wav       binary
+*.flac      binary
+*.aac       binary
+
+# Archives & Bundles
+*.bundle    binary
+*.whl       binary
+*.egg-info  -text
+*.pcap      binary
+*.pcapng    binary
+
+# ============ SPECIAL LUCID EMPIRE FILES ============
+# Placeholder files (text, not binary)
+.gitkeep_placeholder text eol=lf
+
+# Profile data (binary - serialized Python objects)
+lucid_profile_data/** binary
+*.profile   binary
+
+# Config files (text)
+.mozconfig  text eol=lf
+*.mozconfig text eol=lf
+fingerprint.json text eol=lf
+config.json text eol=lf
+
+# ============ GIT FILES ============
+.gitignore      text eol=lf
+.gitattributes  text eol=lf
+.gitkeep        text eol=lf
+
+# ============ CI/CD ============
+.github/**      text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+
+# ============ DOCUMENTATION ============
+README.md           text eol=lf
+*.md                text eol=lf
+LICENSE             text eol=lf
+CONTRIBUTING.md     text eol=lf
+
+# ============ DIFF/MERGE BEHAVIOR ============
+# Python files
+*.py diff=python merge=union
+
+# Bash scripts
+*.sh diff=bash
+
+# JSON files
+*.json diff=json merge=union
+
+# Binary files should not be merged
+*.exe merge=binary
+*.dll merge=binary
+*.so merge=binary
+*.dylib merge=binary
+*.ttf merge=binary
+*.otf merge=binary
