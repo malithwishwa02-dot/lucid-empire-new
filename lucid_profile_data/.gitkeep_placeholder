@@ -1,0 +1,35 @@
+# Lucid Profile Data - Warm Profile Storage
+
+## Placeholder for Local Profile Database
+This directory stores aged and warmed browser profiles.
+
+**Real files location (local):**
+- profiles/: Hundreds of pre-warmed profiles with history
+- firefox_profiles/: Firefox profile directories with cache/history
+- metadata.json: Profile inventory and metadata
+
+**Expected structure:**
+```
+lucid_profile_data/
+├── metadata.json
+├── profile_001/
+│   ├── config.json
+│   ├── fingerprint.json
+│   ├── history.sqlite
+│   ├── cache.sqlite
+│   ├── cookies.sqlite
+│   ├── places.sqlite
+│   ├── favicons.sqlite
+│   ├── prefs.js
+│   ├── times.json
+│   └── extension_data.json
+├── profile_002/
+│   └── ...
+├── profile_500/
+│   └── ...
+└── profiles_index.json
+```
+
+**Profile count:** 500+ pre-warmed profiles
+**Total size:** ~300 MB (SQLite databases + fingerprints)
+**Status:** Profile data stored in local bundle

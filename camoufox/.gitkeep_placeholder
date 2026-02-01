@@ -1,0 +1,34 @@
+# Camoufox - Python Browser Library
+
+## Placeholder for Local Binary
+This directory contains the Camoufox anti-detect browser library.
+
+**Real files location (local):**
+- fonts/: 923 MB of system font libraries (.ttf, .otf)
+- pythonlib/: Python bindings and wrapper code
+- executables/: 87 MB of compiled browser engines (Firefox derivatives)
+
+**Status:** Stub files only - real binaries in local bundle
+**Bundle reference:** lucid-11commits.bundle (600.89 MB)
+
+When ready to push via network, these will be added:
+```
+camoufox/
+├── fonts/
+│   ├── Arial.ttf
+│   ├── Helvetica.ttf
+│   ├── Times_New_Roman.ttf
+│   ├── Courier_New.ttf
+│   ├── System_Fonts/ (1000+ font files)
+│   └── Chinese_Japanese_Korean/ (500+ CJK fonts)
+├── executables/
+│   ├── firefox-headless
+│   ├── firefox-esr
+│   ├── geckodriver
+│   └── xvfb-run
+├── pythonlib/
+│   ├── async_browser.py
+│   ├── firefox_launcher.py
+│   └── profile_manager.py
+└── version.txt
+```

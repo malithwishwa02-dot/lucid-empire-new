@@ -1,0 +1,34 @@
+# Lucid Empire - Asset Registry
+
+## Placeholder for Local Binary Assets
+This directory contains configuration files and template assets.
+
+**Real files location (local):**
+- templates/: Golden profile templates (JSON configurations)
+- search-config.json: Search engine routing configurations
+- uBOAssets.json: uBlock Origin filter lists
+- compat/: Browser compatibility definitions
+
+**Files that should be here:**
+```
+assets/
+├── templates/
+│   ├── golden_template.json
+│   ├── student_profile.json
+│   ├── worker_profile.json
+│   └── golden_fingerprints.json
+├── base.mozconfig
+├── linux.mozconfig
+├── macos.mozconfig
+├── windows.mozconfig
+├── search-config.json
+├── uBOAssets.json
+├── commerce_injector.js
+├── compat/
+│   ├── firefox_115.json
+│   ├── chrome_120.json
+│   └── safari_17.json
+└── README.md
+```
+
+**Status:** Text configs only - binary asset templates in local bundle

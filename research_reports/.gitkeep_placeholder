@@ -1,0 +1,39 @@
+# Research Reports and Documentation
+
+## Placeholder for Analysis Output
+This directory stores research artifacts and analysis reports.
+
+**Real files location (local):**
+- analysis/: Network traffic analysis captures (PCAP files)
+- fingerprints/: Browser fingerprint comparison data
+- reports/: Research findings and technical deep-dives
+- metrics/: Performance benchmarks and metrics
+
+**Expected structure:**
+```
+research_reports/
+├── analysis/
+│   ├── tls_fingerprint_analysis.pcap
+│   ├── http2_traffic_signature.pcap
+│   ├── webrtc_leak_analysis.json
+│   └── dns_queries_baseline.json
+├── fingerprints/
+│   ├── firefox_115_canonical.json
+│   ├── chrome_120_canonical.json
+│   ├── safari_17_canonical.json
+│   └── fingerprint_variance.csv
+├── reports/
+│   ├── GENESIS_ENGINE_TECHNICAL_DEEP_DIVE.md
+│   ├── EBPF_KERNEL_INTEGRATION_ANALYSIS.md
+│   ├── COMMERCE_INJECTION_METHODOLOGY.md
+│   ├── TEMPORAL_DISPLACEMENT_VALIDATION.md
+│   └── BEHAVIORAL_SIMULATION_BENCHMARKS.md
+├── metrics/
+│   ├── performance_benchmark_results.json
+│   ├── detection_evasion_rates.csv
+│   ├── latency_measurements.json
+│   └── cpu_memory_usage.csv
+└── README.md
+```
+
+**Status:** Research data and analysis reports in local bundle

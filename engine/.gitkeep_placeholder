@@ -1,0 +1,38 @@
+# Lucid Empire Engine - Browser Core
+
+## Placeholder for Local Binary Engine Files
+This directory contains compiled browser engine code and integration layer.
+
+**Real files location (local):**
+- firefox-esr-*/: Compiled Firefox ESR binaries (modified for anti-detection)
+- chromium-*/: Chromium derivatives with evasion patches
+- kernel_modules/: eBPF/XDP kernel modules (.ko files)
+- patches/: Compiled patch sets for browser engines
+
+**Expected structure:**
+```
+engine/
+├── firefox/
+│   ├── firefox
+│   ├── firefox-esr
+│   ├── libxul.so
+│   ├── libfreebl3.so
+│   ├── libnss3.so
+│   └── libnssutil3.so
+├── chromium/
+│   ├── chrome
+│   ├── chrome-sandbox
+│   ├── libffmpeg.so
+│   └── libEGL.so
+├── kernel/
+│   ├── lucid_ebpf.ko
+│   ├── xdp_masking.ko
+│   └── faketime.ko
+├── patches/
+│   ├── firefox_evasion_v5.patch
+│   └── chromium_evasion_v5.patch
+└── build_info.json
+```
+
+**Status:** Binary engine files in local bundle
+**Compiled for:** Linux x86_64, macOS arm64, Windows x64
