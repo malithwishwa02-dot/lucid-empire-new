@@ -1,40 +1,30 @@
-# LUCID EMPIRE :: CORTEX ORCHESTRATOR
-# Purpose: Core orchestration and decision-making logic
+# LUCID EMPIRE :: CORTEX
+# Core orchestration engine for unified command & control
 
 import logging
-from typing import Dict, Optional
+import asyncio
 
-class CoreOrchestrator:
-    """Central orchestration for Lucid Empire operations"""
+logger = logging.getLogger(__name__)
+
+class Cortex:
+    """Central nervous system for Lucid Empire operations."""
     
     def __init__(self):
-        self.logger = logging.getLogger(__name__)
-        self.state = {}
-        self.modules = {}
+        self.running = False
+        self.tasks = []
     
-    def register_module(self, name: str, module: object) -> None:
-        """Register an operational module"""
-        self.modules[name] = module
-        self.logger.info(f"Registered module: {name}")
+    async def initialize(self):
+        """Initialize Cortex subsystems."""
+        logger.info("[CORTEX] Initializing core systems...")
+        self.running = True
     
-    def get_module(self, name: str) -> Optional[object]:
-        """Retrieve a registered module"""
-        return self.modules.get(name)
+    async def shutdown(self):
+        """Graceful shutdown of all subsystems."""
+        logger.info("[CORTEX] Shutting down...")
+        self.running = False
+        for task in self.tasks:
+            task.cancel()
     
-    def update_state(self, key: str, value: any) -> None:
-        """Update orchestration state"""
-        self.state[key] = value
-    
-    def get_state(self) -> Dict:
-        """Get current orchestration state"""
-        return self.state.copy()
-    
-    async def execute_operation(self, operation: str, **kwargs) -> bool:
-        """Execute an orchestrated operation"""
-        try:
-            self.logger.info(f"Executing operation: {operation}")
-            # Operation execution logic
-            return True
-        except Exception as e:
-            self.logger.error(f"Operation failed: {e}")
-            return False
+    async def dispatch(self, command):
+        """Route command to appropriate subsystem."""
+        logger.info(f"[CORTEX] Dispatching command: {command}")

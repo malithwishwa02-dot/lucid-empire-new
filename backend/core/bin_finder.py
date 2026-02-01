@@ -1,57 +1,56 @@
-# LUCID EMPIRE :: BINARY FINDER
-# Purpose: Locate and verify browser executables
+# LUCID EMPIRE :: BIN FINDER
+# Discover browser executables and essential binaries
 
 import os
 import subprocess
 import logging
-from typing import Optional, List
+
+logger = logging.getLogger(__name__)
 
 class BinaryFinder:
-    """Locate and manage browser executable binaries"""
+    """Find and validate browser binaries."""
     
-    def __init__(self):
-        self.logger = logging.getLogger(__name__)
-        self.firefox_paths = [
-            "/usr/bin/firefox",
-            "/usr/local/bin/firefox",
-            "C:\\Program Files\\Firefox\\firefox.exe",
-            "C:\\Program Files (x86)\\Firefox\\firefox.exe"
-        ]
+    FIREFOX_PATHS = [
+        "/usr/bin/firefox",
+        "/usr/local/bin/firefox",
+        "C:\\Program Files\\Mozilla Firefox\\firefox.exe",
+        "C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe",
+        "/Applications/Firefox.app/Contents/MacOS/firefox",
+    ]
     
-    def find_firefox(self) -> Optional[str]:
-        """Find Firefox executable"""
-        for path in self.firefox_paths:
+    CHROME_PATHS = [
+        "/usr/bin/google-chrome",
+        "/usr/bin/chromium",
+        "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    ]
+    
+    @staticmethod
+    def find_firefox():
+        """Find Firefox executable."""
+        for path in BinaryFinder.FIREFOX_PATHS:
             if os.path.exists(path):
-                self.logger.info(f"Found Firefox: {path}")
+                logger.info(f"Found Firefox at {path}")
                 return path
-        
-        # Try 'which' command on Unix
-        try:
-            result = subprocess.run(['which', 'firefox'], capture_output=True, text=True)
-            if result.returncode == 0:
-                path = result.stdout.strip()
-                self.logger.info(f"Found Firefox via which: {path}")
-                return path
-        except:
-            pass
-        
-        self.logger.warning("Firefox not found")
+        logger.warning("Firefox not found")
         return None
     
-    def verify_binary(self, path: str) -> bool:
-        """Verify binary exists and is executable"""
-        return os.path.isfile(path) and os.access(path, os.X_OK)
+    @staticmethod
+    def find_chrome():
+        """Find Chrome/Chromium executable."""
+        for path in BinaryFinder.CHROME_PATHS:
+            if os.path.exists(path):
+                logger.info(f"Found Chrome at {path}")
+                return path
+        logger.warning("Chrome not found")
+        return None
     
-    def get_version(self, binary_path: str) -> Optional[str]:
-        """Get browser version"""
+    @staticmethod
+    def get_browser_version(binary_path):
+        """Get browser version from binary."""
         try:
-            result = subprocess.run(
-                [binary_path, '--version'],
-                capture_output=True,
-                text=True,
-                timeout=5
-            )
+            result = subprocess.run([binary_path, "--version"], capture_output=True, text=True, timeout=5)
             return result.stdout.strip()
         except Exception as e:
-            self.logger.error(f"Failed to get version: {e}")
+            logger.warning(f"Failed to get version: {e}")
             return None
