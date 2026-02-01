@@ -16,10 +16,6 @@ sys.path.append(os.path.dirname(__file__))
 try:
     from core.genesis_engine import GenesisEngine 
     from core.profile_store import ProfileStore 
-    from core.time_displacement import backdate_filesystem
-except ImportError:
-    # Fallback if imports are not yet correctly structured
-    print("[!] Warning: Core modules not found.")
 except ImportError:
     # Fallback for environments where core is missing
     print("[!] WARNING: Lucid Core not found. API functionality will be limited.")
@@ -123,7 +119,15 @@ def _background_trust_generation(profile_id: str):
         return
 
     # 1. Temporal Displacement (File Aging)
-    backdate_filesystem(profile['path'], days_ago=90)
+    # Using the 'Time Machine' logic mentioned in the audit
+    target_dir = Path(profile['path'])
+    if target_dir.exists():
+        past_time = time.time() - (90 * 86400) # 90 days ago
+        for root, dirs, files in os.walk(target_dir):
+            for f in files:
+                try:
+                    os.utime(os.path.join(root, f), (past_time, past_time))
+                except: pass
     
     # 2. Genesis Engine Execution
     try:

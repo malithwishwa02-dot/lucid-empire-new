@@ -3,25 +3,6 @@
 
 import asyncio
 
-class CommerceInjector:
-    def __init__(self):
-        pass
-
-    async def inject(self, profile_id, payload):
-        """
-        Injects the payload artifacts into the specified profile.
-        This is a wrapper for the functional injection logic.
-        """
-        print(f" [TRUST] Injecting commerce artifacts into {profile_id}...")
-        # In a real scenario, this would launch a headless browser to the target site
-        # and execute the injection functions.
-        # For simulation, we log the intent.
-        for site in payload.get('history', []):
-            print(f"  -> Seeding history: {site}")
-        for cookie in payload.get('cookies', []):
-            print(f"  -> Dropping cookie: {cookie}")
-        print(f"  -> LocalStorage: {payload.get('local_storage')}")
-
 async def inject_trust_anchors(page, key, value):
     """Inject a trust anchor (key-value pair) into localStorage and dispatch a storage event"""
     # Double-Tap Injection: First write the data, then dispatch a synthetic storage event
