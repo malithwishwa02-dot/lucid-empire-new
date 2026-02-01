@@ -288,7 +288,7 @@ class PhaseExecutor:
         # We assume a default template for headless ops, or one passed via config
         template_path = "assets/templates/golden_iphone13.json" 
         
-        async with AsyncLucidEmpire(
+        async with AsyncCamoufox(
             fingerprint=template_path,
             user_data_dir=PROFILE_DIR,
             env=env,
