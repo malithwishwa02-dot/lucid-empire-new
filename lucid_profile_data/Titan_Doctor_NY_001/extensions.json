@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 32,
+  "addons": [
+    {
+      "id": "data-leak-blocker@mozilla.org",
+      "version": "1.0.0",
+      "type": "extension",
+      "active": true,
+      "name": "Data Leak Blocker"
+    },
+    {
+      "id": "{3650efe3-6183-4c09-b6d4-3a8f486132be}",
+      "version": "16.0.0",
+      "type": "extension",
+      "active": true,
+      "name": "Form Autofill"
+    },
+    {
+      "id": "newtab@mozilla.org",
+      "version": "1.0.0",
+      "type": "extension",
+      "active": true,
+      "name": "New Tab"
+    },
+    {
+      "id": "pictureinpicture@mozilla.org",
+      "version": "1.0.0",
+      "type": "extension",
+      "active": true,
+      "name": "Picture-in-Picture"
+    },
+    {
+      "id": "{18fca4a5-da4c-4d62-904d-234aae2d4e6f}",
+      "version": "1.0.0",
+      "type": "extension",
+      "active": true,
+      "name": "Webcompat"
+    },
+    {
+      "id": "{2d3475b6-d8d7-4c0b-8e7f-5e5c5a5a5a5a}",
+      "version": "6.5.0",
+      "type": "extension",
+      "active": true,
+      "name": "uBlock Origin"
+    },
+    {
+      "id": "{3ac053ee-98e9-4e1a-a745-a5a6a5a5a5a5}",
+      "version": "11.0.0",
+      "type": "extension",
+      "active": true,
+      "name": "Bitwarden - Free Password Manager"
+    },
+    {
+      "id": "firefox-compact-dark@mozilla.org",
+      "version": "1.0.0",
+      "type": "theme",
+      "active": true,
+      "name": "Firefox Compact Dark"
+    }
+  ],
+  "theme": {
+    "id": "firefox-compact-dark@mozilla.org"
+  }
+}

@@ -1,0 +1,10 @@
+Package: lucid-empire
+Version: 5.0.0
+Section: utils
+Priority: optional
+Architecture: amd64
+Depends: python3, libgtk-3-0, libwebkit2gtk-4.0-37
+Maintainer: Dva.12 oblivion@lucid-empire.local
+Description: Lucid Empire - Ultimate Anti-Detect Browser
+ A commercial-grade browser automation and anti-fingerprinting suite.
+ Includes Kernel-level network masking and temporal displacement engine.

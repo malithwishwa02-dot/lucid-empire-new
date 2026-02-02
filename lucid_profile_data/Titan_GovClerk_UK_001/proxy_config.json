@@ -1,0 +1,11 @@
+{
+  "proxy": "socks5://margaret.thompson:SecurePass2024@192.168.1.75:1080",
+  "type": "socks5",
+  "dns_remote": true,
+  "timezone": "Europe/London",
+  "location": "London, England, United Kingdom",
+  "isolation_level": "strict",
+  "leak_protection": true,
+  "ipv6_disabled": true,
+  "dns_over_https": true
+}

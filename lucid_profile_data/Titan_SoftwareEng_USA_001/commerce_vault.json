@@ -1,0 +1,18 @@
+{
+  "status": "ARMED",
+  "trigger_domains": [
+    "stripe.com",
+    "adyen.com",
+    "braintree.com",
+    "paypal.com"
+  ],
+  "payload": {
+    "card_number": "5412752589637849",
+    "cvv": "432",
+    "expiry": "11/2026",
+    "cardholder": "JAMES MITCHELL",
+    "billing_line1": "2847 Silicon Valley Boulevard, Suite 340, San Francisco, CA 94105",
+    "cc_type": "Mastercard",
+    "pan": "5412752589637849"
+  }
+}

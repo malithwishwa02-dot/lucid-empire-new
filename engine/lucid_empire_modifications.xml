@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="lucid_empire_modifications">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/camoufox/lucid-empire/lucid_empire_modifications.zip!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

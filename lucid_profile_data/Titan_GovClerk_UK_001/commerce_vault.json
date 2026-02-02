@@ -1,0 +1,18 @@
+{
+  "status": "ARMED",
+  "trigger_domains": [
+    "stripe.com",
+    "adyen.com",
+    "braintree.com",
+    "paypal.com"
+  ],
+  "payload": {
+    "card_number": "4916830899839814",
+    "cvv": "287",
+    "expiry": "09/2026",
+    "cardholder": "MARGARET THOMPSON",
+    "billing_line1": "45 Whitehall Gardens, Flat 8, London, England SW1A 2AA, United Kingdom",
+    "cc_type": "Visa",
+    "pan": "4916830899839814"
+  }
+}

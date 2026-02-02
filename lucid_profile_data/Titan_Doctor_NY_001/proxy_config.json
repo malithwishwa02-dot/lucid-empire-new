@@ -1,0 +1,11 @@
+{
+  "proxy": "socks5://drjohn:securepass@192.168.1.100:1080",
+  "type": "socks5",
+  "dns_remote": true,
+  "timezone": "America/New_York",
+  "location": "New York, NY, USA",
+  "isolation_level": "strict",
+  "leak_protection": true,
+  "ipv6_disabled": true,
+  "dns_over_https": true
+}

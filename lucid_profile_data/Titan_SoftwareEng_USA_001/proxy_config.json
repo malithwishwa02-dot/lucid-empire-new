@@ -1,0 +1,7 @@
+{
+  "proxy": "socks5://james.mitchell:SecurePass2024@192.168.1.50:1080",
+  "type": "socks5",
+  "dns_remote": true,
+  "timezone": "America/Los_Angeles",
+  "location": "San Francisco, CA, USA"
+}

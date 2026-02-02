@@ -1,0 +1,16 @@
+{
+  "status": "ARMED",
+  "trigger_domains": [
+    "stripe.com",
+    "adyen.com",
+    "braintree.com"
+  ],
+  "payload": {
+    "card_number": "4111111111111111",
+    "cvv": "123",
+    "expiry": "12/28",
+    "cardholder": "DR. JOHN DOE",
+    "billing_line1": "123 PARK AVE, APT 4B",
+    "pac": "9876"
+  }
+}

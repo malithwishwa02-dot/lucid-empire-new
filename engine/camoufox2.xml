@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="camoufox2">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/camoufox/lucid-empire-research-v2.zip!/" />
+      <root url="jar://$PROJECT_DIR$/camoufox/lucid_empire_release_v1_4.zip!/" />
+      <root url="jar://$PROJECT_DIR$/camoufox/lucid-empire-research.zip!/" />
+      <root url="jar://$PROJECT_DIR$/camoufox/lucid_empire_modifications.zip!/" />
+      <root url="jar://$PROJECT_DIR$/camoufox/lucid-research-artifact.zip!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

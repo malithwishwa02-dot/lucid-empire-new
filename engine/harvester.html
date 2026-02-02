@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Lucid Empire :: Fingerprint Harvester</title>
+    <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+</head>
+<body>
+    <h1>Fingerprint Harvester</h1>
+    <p>Run this on the target device to capture its fingerprint.</p>
+    
+    <script>
+        // Initialize the agent
+        const fpPromise = FingerprintJS.load();
+        
+        (async () => {
+            // Get the visitor identifier
+            const fp = await fpPromise;
+            const result = await fp.get();
+            
+            // Capture additional attributes
+            const fingerprint = {
+                visitorId: result.visitorId,
+                userAgent: navigator.userAgent,
+                screen: {
+                    width: screen.width,
+                    height: screen.height,
+                    colorDepth: screen.colorDepth
+                },
+                hardwareConcurrency: navigator.hardwareConcurrency,
+                deviceMemory: navigator.deviceMemory,
+                webgl: {
+                    vendor: (() => {
+                        const canvas = document.createElement('canvas');
+                        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                        if (gl) {
+                            return gl.getParameter(gl.VENDOR);
+                        }
+                        return null;
+                    })()
+                },
+                audio: (() => {
+                    const context = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = context.createOscillator();
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(440, context.currentTime);
+                    oscillator.connect(context.destination);
+                    oscillator.start();
+                    
+                    // Capture the fingerprint
+                    const fingerprint = context.createOscillator().frequency.value;
+                    oscillator.stop();
+                    return fingerprint;
+                })()
+            };
+            
+            // Display the result
+            document.body.innerHTML += `<pre>${JSON.stringify(fingerprint, null, 2)}</pre>`;
+            
+            // Optionally, save the result to a file or send it to a server
+        })();
+    </script>
+</body>
+</html>
